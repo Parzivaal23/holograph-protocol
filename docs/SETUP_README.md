@@ -27,7 +27,6 @@ We compile the code from the `/src` folder into the `/contracts` folder. As a re
 
 1. `yarn clean-compile`
 
-
 ### Building
 
 To build the project you can run `yarn build`. This will look at the `/contracts` folder and generate all the necessary artifacts.

@@ -914,8 +914,8 @@ describe('Holograph Operator Contract', async () => {
         jobOperatorBondAmount.add(bondRequirements[0])
       );
     });
-    it('Should succeed executing 50 jobs', async () => {
-      for (let i = 0, l = 50; i < l; i++) {
+    it('Should succeed executing 20 jobs', async () => {
+      for (let i = 0, l = 20; i < l; i++) {
         if (zeroAddressJobs.length == 0) {
           operatorJobTokenId++;
           await createOperatorJob(l1, l2, operatorJobTokenId);
