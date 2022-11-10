@@ -101,6 +101,8 @@
 
 pragma solidity 0.8.13;
 
-interface HolographTreasuryInterface {
-
+struct DataERC20 {
+  uint256 _balances;
+  uint256 _nonces;
+  mapping(address => mapping(address => uint256)) _allowances;
 }
