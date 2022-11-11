@@ -39,7 +39,7 @@ import {
   SampleERC721,
 } from '../typechain-types';
 
-describe.only('Testing the Holograph ERC20 Enforcer (L1)', async function () {
+describe('Testing the Holograph ERC20 Enforcer (L1)', async function () {
   let l1: PreTest;
 
   let ERC20: HolographERC20;
