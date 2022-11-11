@@ -3,7 +3,7 @@
 /*SOLIDITY_COMPILER_VERSION*/
 
 struct DataERC20 {
-  uint256 _balances;
-  uint256 _nonces;
-  mapping(address => mapping(address => uint256)) _allowances;
+  uint256 _balance;
+  uint256 _nonce;
+  mapping(address => mapping(address => uint256)) _allowance;
 }
