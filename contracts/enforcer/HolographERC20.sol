@@ -107,6 +107,8 @@ import "../abstract/Initializable.sol";
 import "../abstract/NonReentrant.sol";
 import "../abstract/Owner.sol";
 
+import "../struct/DataERC20.sol";
+
 import "../enum/HolographERC20Event.sol";
 import "../enum/InterfaceType.sol";
 
@@ -151,14 +153,9 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   uint256 private _eventConfig;
 
   /**
-   * @dev Mapping of all the addresse's balances.
+   * @dev Mapping from the address to ERC20 data containing balances, allowances, and nonces.
    */
-  mapping(address => uint256) private _balances;
-
-  /**
-   * @dev Mapping of all authorized operators, and capped amounts.
-   */
-  mapping(address => mapping(address => uint256)) private _allowances;
+  mapping(address => DataERC20) private _erc20Data;
 
   /**
    * @dev Total number of token in circulation.
@@ -179,11 +176,6 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
    * @dev Token number of decimal places.
    */
   uint8 private _decimals;
-
-  /**
-   * @dev List of used up nonces. Used in the ERC20Permit interface functionality.
-   */
-  mapping(address => uint256) private _nonces;
 
   /**
    * @notice Only allow calls from bridge smart contract.
@@ -295,11 +287,11 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   }
 
   function allowance(address account, address spender) public view returns (uint256) {
-    return _allowances[account][spender];
+    return _erc20Data[account]._allowances[account][spender];
   }
 
   function balanceOf(address account) public view returns (uint256) {
-    return _balances[account];
+    return _erc20Data[account]._balances;
   }
 
   // solhint-disable-next-line func-name-mixedcase
@@ -312,7 +304,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   }
 
   function nonces(address account) public view returns (uint256) {
-    return _nonces[account];
+    return _erc20Data[account]._nonces;
   }
 
   function symbol() public view returns (string memory) {
@@ -345,10 +337,10 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   }
 
   function burnFrom(address account, uint256 amount) public returns (bool) {
-    uint256 currentAllowance = _allowances[account][msg.sender];
+    uint256 currentAllowance = _erc20Data[account]._allowances[account][msg.sender];
     require(currentAllowance >= amount, "ERC20: amount exceeds allowance");
     unchecked {
-      _allowances[account][msg.sender] = currentAllowance - amount;
+      _erc20Data[account]._allowances[account][msg.sender] = currentAllowance - amount;
     }
     if (_isEventRegistered(HolographERC20Event.beforeBurn)) {
       require(SourceERC20().beforeBurn(account, amount));
@@ -361,7 +353,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   }
 
   function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-    uint256 currentAllowance = _allowances[msg.sender][spender];
+    uint256 currentAllowance = _erc20Data[msg.sender]._allowances[msg.sender][spender];
     require(currentAllowance >= subtractedValue, "ERC20: decreased below zero");
     uint256 newAllowance;
     unchecked {
@@ -396,10 +388,10 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   ) external onlyBridge returns (bytes4 selector, bytes memory data) {
     (address from, address to, uint256 amount) = abi.decode(payload, (address, address, uint256));
     if (sender != from) {
-      uint256 currentAllowance = _allowances[from][sender];
+      uint256 currentAllowance = _erc20Data[from]._allowances[from][sender];
       require(currentAllowance >= amount, "ERC20: amount exceeds allowance");
       unchecked {
-        _allowances[from][sender] = currentAllowance - amount;
+        _erc20Data[from]._allowances[from][sender] = currentAllowance - amount;
       }
     }
     if (_isEventRegistered(HolographERC20Event.bridgeOut)) {
@@ -418,7 +410,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   }
 
   function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
-    uint256 currentAllowance = _allowances[msg.sender][spender];
+    uint256 currentAllowance = _erc20Data[msg.sender]._allowances[msg.sender][spender];
     uint256 newAllowance;
     unchecked {
       newAllowance = currentAllowance + addedValue;
@@ -525,10 +517,10 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   ) public returns (bool) {
     if (account != msg.sender) {
       if (msg.sender != _holograph().getBridge() && msg.sender != _holograph().getOperator()) {
-        uint256 currentAllowance = _allowances[account][msg.sender];
+        uint256 currentAllowance = _erc20Data[account]._allowances[account][msg.sender];
         require(currentAllowance >= amount, "ERC20: amount exceeds allowance");
         unchecked {
-          _allowances[account][msg.sender] = currentAllowance - amount;
+          _erc20Data[account]._allowances[account][msg.sender] = currentAllowance - amount;
         }
       }
     }
@@ -595,10 +587,10 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   ) public returns (bool) {
     if (account != msg.sender) {
       if (msg.sender != _holograph().getBridge() && msg.sender != _holograph().getOperator()) {
-        uint256 currentAllowance = _allowances[account][msg.sender];
+        uint256 currentAllowance = _erc20Data[account]._allowances[account][msg.sender];
         require(currentAllowance >= amount, "ERC20: amount exceeds allowance");
         unchecked {
-          _allowances[account][msg.sender] = currentAllowance - amount;
+          _erc20Data[account]._allowances[account][msg.sender] = currentAllowance - amount;
         }
       }
     }
@@ -619,16 +611,16 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   ) private {
     require(account != address(0), "ERC20: account is zero address");
     require(spender != address(0), "ERC20: spender is zero address");
-    _allowances[account][spender] = amount;
+    _erc20Data[account]._allowances[account][spender] = amount;
     emit Approval(account, spender, amount);
   }
 
   function _burn(address account, uint256 amount) private {
     require(account != address(0), "ERC20: account is zero address");
-    uint256 accountBalance = _balances[account];
+    uint256 accountBalance = _erc20Data[account]._balances;
     require(accountBalance >= amount, "ERC20: amount exceeds balance");
     unchecked {
-      _balances[account] = accountBalance - amount;
+      _erc20Data[account]._balances = accountBalance - amount;
     }
     _totalSupply -= amount;
     emit Transfer(account, address(0), amount);
@@ -683,7 +675,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   function _mint(address to, uint256 amount) private {
     require(to != address(0), "ERC20: minting to burn address");
     _totalSupply += amount;
-    _balances[to] += amount;
+    _erc20Data[to]._balances += amount;
     emit Transfer(address(0), to, amount);
   }
 
@@ -694,12 +686,12 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   ) private {
     require(account != address(0), "ERC20: account is zero address");
     require(recipient != address(0), "ERC20: recipient is zero address");
-    uint256 accountBalance = _balances[account];
+    uint256 accountBalance = _erc20Data[account]._balances;
     require(accountBalance >= amount, "ERC20: amount exceeds balance");
     unchecked {
-      _balances[account] = accountBalance - amount;
+      _erc20Data[account]._balances = accountBalance - amount;
     }
-    _balances[recipient] += amount;
+    _erc20Data[recipient]._balances += amount;
     emit Transfer(account, recipient, amount);
   }
 
@@ -709,8 +701,8 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
    * _Available since v4.1._
    */
   function _useNonce(address account) private returns (uint256 current) {
-    current = _nonces[account];
-    _nonces[account]++;
+    current = _erc20Data[account]._nonces;
+    _erc20Data[account]._nonces++;
   }
 
   function _isContract(address contractAddress) private view returns (bool) {
