@@ -104,10 +104,7 @@ pragma solidity 0.8.13;
 /// @title Holograph Generic Standard
 interface HolographedGeneric {
   // event id = 1
-  function bridgeIn(
-    uint32 _chainId,
-    bytes calldata _data
-  ) external returns (bool success);
+  function bridgeIn(uint32 _chainId, bytes calldata _data) external returns (bool success);
 
   // event id = 2
   function bridgeOut(

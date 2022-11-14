@@ -1,12 +1,7 @@
 declare var global: any;
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from '@holographxyz/hardhat-deploy-holographed/types';
-import {
-  hreSplit,
-  genesisDeployHelper,
-  genesisDeriveFutureAddress,
-  generateInitCode,
-} from '../scripts/utils/helpers';
+import { hreSplit, genesisDeployHelper, genesisDeriveFutureAddress, generateInitCode } from '../scripts/utils/helpers';
 import { ConfigureEvents } from '../scripts/utils/events';
 
 const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
