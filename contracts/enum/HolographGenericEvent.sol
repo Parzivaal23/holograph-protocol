@@ -101,6 +101,8 @@
 
 pragma solidity 0.8.13;
 
-interface HolographTreasuryInterface {
-
+enum HolographGenericEvent {
+  UNDEFINED, // 0
+  bridgeIn, //  1
+  bridgeOut //  2
 }
