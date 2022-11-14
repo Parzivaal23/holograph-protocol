@@ -1077,7 +1077,7 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
 
   /**
    * @notice Get the Minimum Gas Price
-   * @dev This amount is used as the value that will define a job as underpriced is lower than
+   * @dev The minimum value required to execute a job without it being marked as under priced
    */
   function getMinGasPrice() external view returns (address minGasPrice) {
     assembly {

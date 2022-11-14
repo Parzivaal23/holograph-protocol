@@ -25,14 +25,21 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
 
   const salt = hre.deploymentSalt;
 
-  const MSGBASEGAS: BigNumber = BigNumber.from('110000');
-  const MSGGASPERBYTE: BigNumber = BigNumber.from('25');
-  const JOBBASEGAS: BigNumber = BigNumber.from('160000');
-  const JOBGASPERBYTE: BigNumber = BigNumber.from('35');
-  const MINGASPRICE: BigNumber = BigNumber.from('999999999');
-  const GASLIMIT: BigNumber = BigNumber.from('10000001');
+  const MSG_BASE_GAS: BigNumber = BigNumber.from('110000');
+  const MSG_GAS_PER_BYTE: BigNumber = BigNumber.from('25');
+  const JOB_BASE_GAS: BigNumber = BigNumber.from('160000');
+  const JOB_GAS_PER_BYTE: BigNumber = BigNumber.from('35');
+  const MIN_GAS_PRICE: BigNumber = BigNumber.from('999999999');
+  const GAS_LIMIT: BigNumber = BigNumber.from('10000001');
 
-  const defaultParams: BigNumber[] = [MSGBASEGAS, MSGGASPERBYTE, JOBBASEGAS, JOBGASPERBYTE, MINGASPRICE, GASLIMIT];
+  const defaultParams: BigNumber[] = [
+    MSG_BASE_GAS,
+    MSG_GAS_PER_BYTE,
+    JOB_BASE_GAS,
+    JOB_GAS_PER_BYTE,
+    MIN_GAS_PRICE,
+    GAS_LIMIT,
+  ];
 
   const network: Network = networks[hre.networkName];
   const networkType: NetworkType = network.type;
