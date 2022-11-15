@@ -502,41 +502,41 @@ describe('PA1D Contract', async function () {
     it('should allow inherited contract to call fn');
   });
 
-  // describe('bidSharesForToken()', () => {
-  //   it('anyone should be able to call the fn', async () => {
-  //     await expect(pad1d.bidSharesForToken(0)).to.not.be.reverted;
-  //   });
+  describe('bidSharesForToken()', () => {
+    it('anyone should be able to call the fn', async () => {
+      await expect(pad1d.bidSharesForToken(0)).to.not.be.reverted;
+    });
 
-  //   it('should allow external contract to call fn', async () => {
-  //     await testExternalCallToFunction(
-  //       'function bidSharesForToken(uint256 tokenId) public view returns (((uint256),(uint256),(uint256)) memory bidShares)',
-  //       'bidSharesForToken',
-  //       [0]
-  //     );
-  //   });
+    it('should allow external contract to call fn', async () => {
+      await testExternalCallToFunction(
+        'function bidSharesForToken(uint256 tokenId) public view returns (((uint256),(uint256),(uint256)) memory bidShares)',
+        'bidSharesForToken',
+        [0]
+      );
+    });
 
-  //   it('should allow inherited contract to call fn');
-  // });
+    it('should allow inherited contract to call fn');
+  });
 
-  // describe('getTokenAddress()', () => {
-  //   const tokenName = `Sample ERC721 Contract (${l1.network.holographId.toString()})`;
+  describe('getTokenAddress()', () => {
+    const tokenName = `Sample ERC721 Contract (${l1.network.holographId.toString()})`;
 
-  //   it('anyone should be able to call the fn', async () => {
-  //     await expect(pad1d.getTokenAddress(tokenName)).to.not.be.reverted;
-  //   });
+    it('anyone should be able to call the fn', async () => {
+      await expect(pad1d.getTokenAddress(tokenName)).to.not.be.reverted;
+    });
 
-  //   it('should allow external contract to call fn', async () => {
-  //     await testExternalCallToFunction(
-  //       'function getTokenAddress(string memory tokenName) public view returns (address)',
-  //       'getTokenAddress',
-  //       [tokenName]
-  //     );
-  //   });
+    it('should allow external contract to call fn', async () => {
+      await testExternalCallToFunction(
+        'function getTokenAddress(string memory tokenName) public view returns (address)',
+        'getTokenAddress',
+        [tokenName]
+      );
+    });
 
-  //   it('should allow inherited contract to call fn');
-  // });
+    it('should allow inherited contract to call fn');
+  });
 
-  describe.only('Royalties Distribution Validation', () => {
+  describe('Royalties Distribution Validation', () => {
     const errorMargin = ethers.utils.parseUnits('2000', 'wei');
 
     describe('A collection with 1 recipient', async () => {
