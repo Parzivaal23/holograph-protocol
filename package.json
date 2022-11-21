@@ -45,7 +45,8 @@
     "lint": "eslint . --ext .ts --config .eslintrc",
     "lint:fix": "eslint . --ext .ts --config .eslintrc --fix",
     "prettier:check": "prettier --ignore-unknown --check \"deploy/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\"",
-    "prettier:fix": "prettier --loglevel error --ignore-path .gitignore --write ."
+    "prettier:fix": "prettier --loglevel error --ignore-path .gitignore --write .",
+    "coverage": "hardhat coverage"
   },
   "dependencies": {
     "@holographxyz/environment": "0.1.8",
