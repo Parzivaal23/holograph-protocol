@@ -1,5 +1,6 @@
 declare var global: any;
 import fs from 'fs';
+import 'solidity-coverage';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import '@holographxyz/hardhat-deploy-holographed';
