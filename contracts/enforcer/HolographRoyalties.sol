@@ -398,7 +398,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     uint256 length = addresses.length;
     // accommodating the 2300 gas stipend
     // adding 1x for each item in array to accomodate rounding errors
-    uint256 gasCost = (23300 * length) + length;
+    uint256 gasCost = (2300 * length) + length;
     uint256 balance = address(this).balance;
     require(balance - gasCost > 10000, "ROYALTIES: Not enough ETH");
     balance = balance - gasCost;
@@ -406,7 +406,9 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     // uint256 sent;
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
-      addresses[i].transfer(sending);
+      // addresses[i].transfer(sending);
+      (bool success, ) = addresses[i].call{value: sending}("");
+      require(success, "ROYALTIES: Transfer failed");
       // sent = sent + sending;
     }
   }
