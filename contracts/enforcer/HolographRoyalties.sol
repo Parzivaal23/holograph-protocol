@@ -396,20 +396,13 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     address payable[] memory addresses = _getPayoutAddresses();
     uint256[] memory bps = _getPayoutBps();
     uint256 length = addresses.length;
-    // accommodating the 2300 gas stipend
-    // adding 1x for each item in array to accomodate rounding errors
-    uint256 gasCost = (2300 * length) + length;
     uint256 balance = address(this).balance;
-    require(balance - gasCost > 10000, "ROYALTIES: Not enough ETH");
-    balance = balance - gasCost;
+    require(balance > 10000, "ROYALTIES: Not enough ETH");
     uint256 sending;
-    // uint256 sent;
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
-      // addresses[i].transfer(sending);
       (bool success, ) = addresses[i].call{value: sending}("");
       require(success, "ROYALTIES: Transfer failed");
-      // sent = sent + sending;
     }
   }
 
@@ -425,11 +418,16 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     uint256 balance = erc20.balanceOf(address(this));
     require(balance > 10000, "ROYALTIES: Not enough tokens");
     uint256 sending;
-    //uint256 sent;
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
-      require(erc20.transfer(addresses[i], sending), "ROYALTIES: ERC20 transfer failed");
-      // sent = sent + sending;
+      // Some tokens revert when transferring a zero value amount this check ensures if one recipient's
+      // amount is zero, the transfer will still succeed for the other recipients.
+      if (sending > 0) {
+        // TODO: Need to use safeTransferFrom to support non-compliant tokens such as USDT, BNB, etc.
+        // See: https://github.com/code-423n4/2022-10-holograph-findings/issues/456
+        (bool success, ) = addresses[i].call{value: sending}("");
+        require(success, "ROYALTIES: ERC20 transfer failed");
+      }
     }
   }
 
@@ -448,11 +446,16 @@ contract HolographRoyalties is Admin, Owner, Initializable {
       erc20 = ERC20(tokenAddresses[t]);
       balance = erc20.balanceOf(address(this));
       require(balance > 10000, "ROYALTIES: Not enough tokens");
-      // uint256 sent;
       for (uint256 i = 0; i < addresses.length; i++) {
         sending = ((bps[i] * balance) / 10000);
-        require(erc20.transfer(addresses[i], sending), "ROYALTIES: ERC20 transfer failed");
-        // sent = sent + sending;
+        // Some tokens revert when transferring a zero value amount this check ensures if one recipient's
+        // amount is zero, the transfer will still succeed for the other recipients.
+        if (sending > 0) {
+          // TODO: Need to use safeTransferFrom to support non-compliant tokens such as USDT, BNB, etc.
+          // See: https://github.com/code-423n4/2022-10-holograph-findings/issues/456
+          (bool success, ) = addresses[i].call{value: sending}("");
+          require(success, "ROYALTIES: ERC20 transfer failed");
+        }
       }
     }
   }
@@ -487,6 +490,8 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     require(addresses.length == bps.length, "ROYALTIES: missmatched lenghts");
     uint256 totalBp;
     for (uint256 i = 0; i < addresses.length; i++) {
+      require(addresses[i] != address(0), "ROYALTIES: payee is zero address");
+      require(bps[i] > 0, "ROYALTIES: bp is zero");
       totalBp = totalBp + bps[i];
     }
     require(totalBp == 10000, "ROYALTIES: bps must equal 10000");
@@ -546,6 +551,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     address payable receiver,
     uint256 bp
   ) public onlyOwner {
+    require(bp <= 10_000, "ROYALTIES: cannot be over 100%");
     if (tokenId == 0) {
       _setDefaultReceiver(receiver);
       _setDefaultBp(bp);
@@ -682,9 +688,9 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     bidShares.prevOwner.value = 0;
     bidShares.owner.value = 0;
     if (_getReceiver(tokenId) == address(0)) {
-      bidShares.creator.value = _getDefaultBp();
+      bidShares.creator.value = _getDefaultBp() * (10**16);
     } else {
-      bidShares.creator.value = _getBp(tokenId);
+      bidShares.creator.value = _getBp(tokenId) * (10**16);
     }
     return bidShares;
   }
