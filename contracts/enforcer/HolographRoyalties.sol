@@ -551,7 +551,6 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     address payable receiver,
     uint256 bp
   ) public onlyOwner {
-    require(bp <= 10_000, "ROYALTIES: cannot be over 100%");
     if (tokenId == 0) {
       _setDefaultReceiver(receiver);
       _setDefaultBp(bp);
