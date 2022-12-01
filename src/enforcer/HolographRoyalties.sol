@@ -309,6 +309,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
 
   /**
    * @dev Internal function that transfers tokens to all payout recipients.
+   * @dev ERC20 tokens that use fee on transfer are not supported.
    * @param tokenAddress Smart contract address of ERC20 token.
    */
   function _payoutToken(address tokenAddress) private {
@@ -335,6 +336,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
   /**
    * @dev Internal function that transfers multiple tokens to all payout recipients.
    * @dev Try to use _payoutToken and handle each token individually.
+   * @dev ERC20 tokens that use fee on transfer are not supported.
    * @param tokenAddresses Array of smart contract addresses of ERC20 tokens.
    */
   function _payoutTokens(address[] memory tokenAddresses) private {
@@ -452,6 +454,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     address payable receiver,
     uint256 bp
   ) public onlyOwner {
+    require(receiver != address(0), "ROYALTIES: receiver is zero address");
     if (tokenId == 0) {
       _setDefaultReceiver(receiver);
       _setDefaultBp(bp);
