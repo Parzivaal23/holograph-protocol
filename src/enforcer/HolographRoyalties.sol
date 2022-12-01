@@ -318,7 +318,6 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     uint256 length = addresses.length;
     ERC20 erc20 = ERC20(tokenAddress);
     uint256 balance = erc20.balanceOf(address(this));
-    require(balance > 10000, "ROYALTIES: Not enough tokens");
     uint256 sending;
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
@@ -348,7 +347,6 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     for (uint256 t = 0; t < tokenAddresses.length; t++) {
       erc20 = ERC20(tokenAddresses[t]);
       balance = erc20.balanceOf(address(this));
-      require(balance > 10000, "ROYALTIES: Not enough tokens");
       for (uint256 i = 0; i < addresses.length; i++) {
         sending = ((bps[i] * balance) / 10000);
         // Some tokens revert when transferring a zero value amount this check ensures if one recipient's
