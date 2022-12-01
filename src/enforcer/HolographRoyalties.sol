@@ -292,13 +292,17 @@ contract HolographRoyalties is Admin, Owner, Initializable {
 
   /**
    * @dev Internal function that transfers ETH to all payout recipients.
+   * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
+   * @dev This function uses a push payment model, where the contract pushes the ETH to the recipients.
+   * @dev The design is intended so that royalty distribution logic can be handled externally via payment distribution contracts.
+   * @dev The recommended usage for royalty structures that require more complex payout logic to multiple recipients is to
+   *      set 100% ownership payout with the recipient being the payment distribution contract.
    */
   function _payoutEth() private {
     address payable[] memory addresses = _getPayoutAddresses();
     uint256[] memory bps = _getPayoutBps();
     uint256 length = addresses.length;
     uint256 balance = address(this).balance;
-    require(balance > 10000, "ROYALTIES: Not enough ETH");
     uint256 sending;
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
@@ -310,6 +314,12 @@ contract HolographRoyalties is Admin, Owner, Initializable {
   /**
    * @dev Internal function that transfers tokens to all payout recipients.
    * @dev ERC20 tokens that use fee on transfer are not supported.
+   * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
+   * @dev This function uses a push payment model, where the contract pushes the ETH to the recipients.
+   * @dev The design is intended so that royalty distribution logic can be handled externally via payment distribution contracts.
+   * @dev The recommended usage for royalty structures that require more complex payout logic to multiple recipients is to
+   *      set 100% ownership payout with the recipient being the payment distribution contract.
+   *
    * @param tokenAddress Smart contract address of ERC20 token.
    */
   function _payoutToken(address tokenAddress) private {
@@ -325,6 +335,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
       // amount is zero, the transfer will still succeed for the other recipients.
       if (sending > 0) {
         // TODO: Need to use safeTransferFrom to support non-compliant tokens such as USDT, BNB, etc.
+        // Vitto mentioned that has has a way to handle this without safeTransferFrom using assembly.
         // See: https://github.com/code-423n4/2022-10-holograph-findings/issues/456
         (bool success, ) = addresses[i].call{value: sending}("");
         require(success, "ROYALTIES: ERC20 transfer failed");
@@ -336,6 +347,12 @@ contract HolographRoyalties is Admin, Owner, Initializable {
    * @dev Internal function that transfers multiple tokens to all payout recipients.
    * @dev Try to use _payoutToken and handle each token individually.
    * @dev ERC20 tokens that use fee on transfer are not supported.
+   * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
+   * @dev This function uses a push payment model, where the contract pushes the ETH to the recipients.
+   * @dev The design is intended so that royalty distribution logic can be handled externally via payment distribution contracts.
+   * @dev The recommended usage for royalty structures that require more complex payout logic to multiple recipients is to
+   *      set 100% ownership payout with the recipient being the payment distribution contract.
+   *
    * @param tokenAddresses Array of smart contract addresses of ERC20 tokens.
    */
   function _payoutTokens(address[] memory tokenAddresses) private {
@@ -353,6 +370,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
         // amount is zero, the transfer will still succeed for the other recipients.
         if (sending > 0) {
           // TODO: Need to use safeTransferFrom to support non-compliant tokens such as USDT, BNB, etc.
+          // Vitto mentioned that has has a way to handle this without safeTransferFrom using assembly.
           // See: https://github.com/code-423n4/2022-10-holograph-findings/issues/456
           (bool success, ) = addresses[i].call{value: sending}("");
           require(success, "ROYALTIES: ERC20 transfer failed");
