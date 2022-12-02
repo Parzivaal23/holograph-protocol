@@ -56,7 +56,7 @@ describe('HolographRoyalties Contract', async function () {
 
   describe('initHolographRoyalties()', () => {
     it('should fail be initialized twice', async function () {
-      const initCode = generateInitCode(['address', 'uint256'], [l1.wallet2.address, '100']);
+      const initCode = generateInitCode(['uint256', 'uint256'], [100, 0]);
 
       await expect(royalties.connect(owner).initHolographRoyalties(initCode)).to.be.revertedWith(
         ROYALTIES_ALREADY_INITIALIZED_ERROR_MSG

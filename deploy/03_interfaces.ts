@@ -284,7 +284,7 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
     // HolographRoyalties
     '4': [
       // HolographRoyalties
-      functionHash('initHolographRoyalties(bytes,bytes)'),
+      functionHash('initHolographRoyalties(bytes)'),
       functionHash('configurePayouts(address[],uint256[])'),
       functionHash('getPayoutInfo()'),
       functionHash('getEthPayout()'),
