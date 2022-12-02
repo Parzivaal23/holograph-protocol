@@ -97,8 +97,8 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     }
     require(initialized == 0, "ROYALTIES: already initialized");
     (uint256 bp, uint256 useExtenededCall) = abi.decode(initPayload, (uint256, uint256));
-    if (useExtendedCall > 0) {
-      useExtendedCall = 1;
+    if (useExtenededCall > 0) {
+      useExtenededCall = 1;
     }
     assembly {
       sstore(_extendedCallSlot, useExtenededCall)
@@ -303,7 +303,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
   }
 
   /**
-   * @dev Internal function that transfers ETH to all payout recipients.
+   * @dev Private function that transfers ETH to all payout recipients.
    * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
    * @dev This function uses a push payment model, where the contract pushes the ETH to the recipients.
    * @dev The design is intended so that royalty distribution logic can be handled externally via payment distribution contracts.
@@ -322,6 +322,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     }
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
+      // If the contract enabled extended call on init then use call to transfer, otherwise use transfer
       if (extendedCall == true) {
         (bool success, ) = addresses[i].call{value: sending}("");
         require(success, "ROYALTIES: Transfer failed");
@@ -332,7 +333,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
   }
 
   /**
-   * @dev Internal function that transfers tokens to all payout recipients.
+   * @dev Private function that transfers tokens to all payout recipients.
    * @dev ERC20 tokens that use fee on transfer are not supported.
    * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
    * @dev This function uses a push payment model, where the contract pushes the ETH to the recipients.
@@ -354,16 +355,20 @@ contract HolographRoyalties is Admin, Owner, Initializable {
       // Some tokens revert when transferring a zero value amount this check ensures if one recipient's
       // amount is zero, the transfer will still succeed for the other recipients.
       if (sending > 0) {
-        // TODO: Need to use safeTransferFrom to support non-compliant tokens such as USDT, BNB, etc.
-        // Vitto mentioned that has has a way to handle this without safeTransferFrom using assembly.
-        // See: https://github.com/code-423n4/2022-10-holograph-findings/issues/456
-        require(erc20.transfer(addresses[i], sending), "ROYALTIES: ERC20 transfer failed");
+        require(
+          _callOptionalReturn(
+            tokenAddress,
+            erc20.transfer.selector,
+            abi.encode(address(addresses[i]), uint256(sending))
+          ),
+          "ROYALTIES: ERC20 transfer failed"
+        );
       }
     }
   }
 
   /**
-   * @dev Internal function that transfers multiple tokens to all payout recipients.
+   * @dev Private function that transfers multiple tokens to all payout recipients.
    * @dev Try to use _payoutToken and handle each token individually.
    * @dev ERC20 tokens that use fee on transfer are not supported.
    * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
@@ -388,10 +393,14 @@ contract HolographRoyalties is Admin, Owner, Initializable {
         // Some tokens revert when transferring a zero value amount this check ensures if one recipient's
         // amount is zero, the transfer will still succeed for the other recipients.
         if (sending > 0) {
-          // TODO: Need to use safeTransferFrom to support non-compliant tokens such as USDT, BNB, etc.
-          // Vitto mentioned that has has a way to handle this without safeTransferFrom using assembly.
-          // See: https://github.com/code-423n4/2022-10-holograph-findings/issues/456
-          require(erc20.transfer(addresses[i], sending), "ROYALTIES: ERC20 transfer failed");
+          require(
+            _callOptionalReturn(
+              tokenAddresses[t],
+              erc20.transfer.selector,
+              abi.encode(address(addresses[i]), uint256(sending))
+            ),
+            "ROYALTIES: ERC20 transfer failed"
+          );
         }
       }
     }
@@ -640,5 +649,32 @@ contract HolographRoyalties is Admin, Owner, Initializable {
    */
   function getTokenAddress(string memory tokenName) public view returns (address) {
     return _getTokenAddress(tokenName);
+  }
+
+  /**
+   * @notice Used to wrap function calls to check if they return without revert regardless of return type.
+   * @dev
+   * @return Returns true if the wrapped function call returns without a revert even if it doesn't return true.
+   */
+  function _callOptionalReturn(
+    address target,
+    bytes4 functionSignature,
+    bytes memory payload
+  ) internal returns (bool) {
+    bytes memory data = abi.encodePacked(functionSignature, payload);
+    bool success = true;
+    assembly {
+      let result := call(gas(), target, callvalue(), add(data, 0x20), mload(data), 0, 0)
+      switch result
+      case 0 {
+        revert(0, returndatasize())
+      }
+      default {
+        if gt(returndatasize(), 0) {
+          returndatacopy(success, 0, 0x20)
+        }
+      }
+    }
+    return success;
   }
 }
