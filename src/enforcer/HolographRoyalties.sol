@@ -40,6 +40,11 @@ contract HolographRoyalties is Admin, Owner, Initializable {
    * @dev bytes32(uint256(keccak256('eip1967.Holograph.ROYALTIES.payout.bps')) - 1)
    */
   bytes32 constant _payoutBpsSlot = precomputeslot("eip1967.Holograph.ROYALTIES.payout.bps");
+  /**
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.ROYALTIES.extendedCall')) - 1)
+   * @dev extendedCall is an init config used to determine if payouts should be sent via a call or a transfer.
+   */
+  bytes32 constant _extendedCallSlot = precomputeslot("eip1967.Holograph.ROYALTIES.extendedCall");
 
   string constant _bpString = "eip1967.Holograph.ROYALTIES.bp";
   string constant _receiverString = "eip1967.Holograph.ROYALTIES.receiver";
@@ -50,7 +55,8 @@ contract HolographRoyalties is Admin, Owner, Initializable {
    * @dev Emits event in order to comply with Rarible V1 royalty spec.
    * @param tokenId Specific token id for which royalty info is being set, set as 0 for all tokens inside of the smart contract.
    * @param recipients Address array of wallets that will receive tha royalties.
-   * @param bps Uint256 array of base points(percentages) that each wallet(specified in recipients) will receive from the royalty payouts. Make sure that all the base points add up to a total of 10000.
+   * @param bps Uint256 array of base points(percentages) that each wallet(specified in recipients) will receive from the royalty payouts.
+   *            Make sure that all the base points add up to a total of 10000.
    */
   event SecondarySaleFees(uint256 tokenId, address[] recipients, uint256[] bps);
 
@@ -90,7 +96,13 @@ contract HolographRoyalties is Admin, Owner, Initializable {
       initialized := sload(_initializedPaidSlot)
     }
     require(initialized == 0, "ROYALTIES: already initialized");
-    uint256 bp = abi.decode(initPayload, (uint256));
+    (uint256 bp, uint256 useExtenededCall) = abi.decode(initPayload, (uint256, uint256));
+    if (useExtendedCall > 0) {
+      useExtendedCall = 1;
+    }
+    assembly {
+      sstore(_extendedCallSlot, useExtenededCall)
+    }
     setRoyalties(0, payable(address(this)), bp);
     address payable[] memory addresses = new address payable[](1);
     addresses[0] = payable(getOwner());
@@ -304,10 +316,18 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     uint256 length = addresses.length;
     uint256 balance = address(this).balance;
     uint256 sending;
+    bool extendedCall;
+    assembly {
+      extendedCall := sload(_extendedCallSlot)
+    }
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
-      (bool success, ) = addresses[i].call{value: sending}("");
-      require(success, "ROYALTIES: Transfer failed");
+      if (extendedCall == true) {
+        (bool success, ) = addresses[i].call{value: sending}("");
+        require(success, "ROYALTIES: Transfer failed");
+      } else {
+        addresses[i].transfer(sending);
+      }
     }
   }
 
@@ -337,8 +357,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
         // TODO: Need to use safeTransferFrom to support non-compliant tokens such as USDT, BNB, etc.
         // Vitto mentioned that has has a way to handle this without safeTransferFrom using assembly.
         // See: https://github.com/code-423n4/2022-10-holograph-findings/issues/456
-        (bool success, ) = addresses[i].call{value: sending}("");
-        require(success, "ROYALTIES: ERC20 transfer failed");
+        require(erc20.transfer(addresses[i], sending), "ROYALTIES: ERC20 transfer failed");
       }
     }
   }
@@ -372,8 +391,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
           // TODO: Need to use safeTransferFrom to support non-compliant tokens such as USDT, BNB, etc.
           // Vitto mentioned that has has a way to handle this without safeTransferFrom using assembly.
           // See: https://github.com/code-423n4/2022-10-holograph-findings/issues/456
-          (bool success, ) = addresses[i].call{value: sending}("");
-          require(success, "ROYALTIES: ERC20 transfer failed");
+          require(erc20.transfer(addresses[i], sending), "ROYALTIES: ERC20 transfer failed");
         }
       }
     }
