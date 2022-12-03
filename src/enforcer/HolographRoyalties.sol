@@ -653,7 +653,9 @@ contract HolographRoyalties is Admin, Owner, Initializable {
 
   /**
    * @notice Used to wrap function calls to check if they return without revert regardless of return type.
-   * @dev
+   * @dev Checks if wrapped function opcode is a revert, if it is then it reverts as well, if it's not then
+   *      it checks for return data, if return data exists, it is returned as a bool,
+   *      if return data does not exist (0 length) then success is expected and returns true
    * @return Returns true if the wrapped function call returns without a revert even if it doesn't return true.
    */
   function _callOptionalReturn(
