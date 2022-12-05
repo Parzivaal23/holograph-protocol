@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 
-import { HolographRoyalties, MockExternalCall, MockExternalCall__factory } from '../typechain-types';
+import { HolographERC20, HolographRoyalties, MockExternalCall, MockExternalCall__factory } from '../typechain-types';
 import { functionHash, generateInitCode } from '../scripts/utils/helpers';
 import setup, { PreTest } from './utils';
 import {
@@ -13,6 +13,7 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
 describe.only('HolographRoyalties Contract', async function () {
   let royalties: HolographRoyalties;
+  let ERC20: HolographERC20;
   let l1: PreTest;
   let mockExternalCall: MockExternalCall;
   let owner: SignerWithAddress;
@@ -29,6 +30,7 @@ describe.only('HolographRoyalties Contract', async function () {
     notOwner = l1.wallet1;
 
     royalties = l1.royalties.attach(l1.sampleErc721Holographer.address);
+    ERC20 = await l1.holographErc20.attach(l1.sampleErc20Holographer.address);
 
     const mockExternalCallFactory = await ethers.getContractFactory<MockExternalCall__factory>('MockExternalCall');
     mockExternalCall = await mockExternalCallFactory.deploy();
@@ -74,7 +76,7 @@ describe.only('HolographRoyalties Contract', async function () {
       expect(ownerAddress).to.not.equal(notOwner);
     });
 
-    it('should allow external contract to call fn', async function () {
+    it('should allow external contract to call the function', async function () {
       await testExternalCallToFunction('function owner() external view returns (address)', 'owner');
     });
   });
@@ -247,14 +249,14 @@ describe.only('HolographRoyalties Contract', async function () {
       expect(bps).deep.equal(payoutInfo.bps.map((bg) => bg.toNumber()));
     });
 
-    it('should fail if the arguments arrays have different lenghts', async () => {
+    it('should fail if the arguments arrays have different lengths', async () => {
       const addresses = [anyAddress];
       const bps = [1000, 9000];
 
       let data = (await royalties.populateTransaction.configurePayouts(addresses, bps)).data || '';
 
       await expect(l1.factory.connect(owner).adminCall(royalties.address, data)).to.be.revertedWith(
-        'ROYALTIES: missmatched lenghts'
+        'ROYALTIES: missmatched lengths'
       );
     });
 
@@ -288,32 +290,27 @@ describe.only('HolographRoyalties Contract', async function () {
   });
 
   describe('getPayoutInfo()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.getPayoutInfo()).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function getPayoutInfo() public view returns (address[] memory addresses, uint256[] memory bps)',
         'getPayoutInfo'
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('getEthPayout()', () => {
-    it.skip('the owner should be able to call the fn', async () => {
-      //TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
+    it('the owner should be able to call the function', async () => {
+      // TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
       let data = (await royalties.populateTransaction.getEthPayout()).data || '';
 
       const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
       await tx.wait();
-    });
-
-    it.skip('A authorized address should be able to call the fn', async () => {
-      //TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
-      await testExternalCallToFunction('function getEthPayout() public ', 'getEthPayout');
     });
 
     it('Should fail if sender is not authorized', async () => {
@@ -322,16 +319,16 @@ describe.only('HolographRoyalties Contract', async function () {
   });
 
   describe('getTokenPayout()', () => {
-    it.skip('the owner should be able to call the fn', async () => {
-      //TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
-      let data = (await royalties.populateTransaction.getTokenPayout(owner.address)).data || '';
+    it('the owner should be able to call the function', async () => {
+      // TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
+      let data = (await royalties.populateTransaction.getTokenPayout(ERC20.address)).data || '';
 
       const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
       await tx.wait();
     });
 
-    it.skip('A authorized address should be able to call the fn', async () => {
-      //TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
+    it.skip('A authorized address should be able to call the function', async () => {
+      // TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
       await testExternalCallToFunction('function getTokenPayout(address tokenAddress) public', 'getTokenPayout', [
         mockExternalCall.address,
       ]);
@@ -343,16 +340,16 @@ describe.only('HolographRoyalties Contract', async function () {
   });
 
   describe('getTokensPayout()', () => {
-    it.skip('the owner should be able to call the fn', async () => {
-      //TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
-      let data = (await royalties.populateTransaction.getTokensPayout([owner.address])).data || '';
+    it('the owner should be able to call the function', async () => {
+      // TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
+      let data = (await royalties.populateTransaction.getTokensPayout([ERC20.address])).data || '';
 
       const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
       await tx.wait();
     });
 
-    it.skip('A authorized address should be able to call the fn', async () => {
-      //TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
+    it.skip('A authorized address should be able to call the function', async () => {
+      // TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
       await testExternalCallToFunction(
         'function getTokensPayout(address[] memory tokenAddresses) public',
         'getTokensPayout',
@@ -378,11 +375,11 @@ describe.only('HolographRoyalties Contract', async function () {
   });
 
   describe('royaltyInfo()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.royaltyInfo(1, 10)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function royaltyInfo(uint256 tokenId, uint256 value) public view returns (address, uint256)',
         'royaltyInfo',
@@ -390,15 +387,15 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('getFeeBps()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.getFeeBps(1)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function getFeeBps(uint256 tokenId) public view returns (uint256[] memory)',
         'getFeeBps',
@@ -406,15 +403,15 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('getFeeRecipients()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.getFeeRecipients(1)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function getFeeRecipients(uint256 tokenId) public view returns (address[] memory)',
         'getFeeRecipients',
@@ -422,15 +419,15 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('getRoyalties()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.getRoyalties(1)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function getRoyalties(uint256 tokenId) public view returns (address[] memory, uint256[] memory)',
         'getRoyalties',
@@ -438,15 +435,15 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('getFees()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.getFees(1)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function getFees(uint256 tokenId) public view returns (address[] memory, uint256[] memory)',
         'getFees',
@@ -454,15 +451,15 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('tokenCreator()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.tokenCreators(0)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function tokenCreators(uint256 tokenId) public view returns (address)',
         'tokenCreators',
@@ -470,15 +467,15 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('calculateRoyaltyFee()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.calculateRoyaltyFee(createRandomAddress(), 1, 1)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function calculateRoyaltyFee(address, uint256 tokenId, uint256 amount) public view returns (uint256)',
         'calculateRoyaltyFee',
@@ -486,27 +483,27 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('marketContract()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       expect(await royalties.marketContract()).to.equal(royalties.address);
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction('function marketContract() public view returns (address)', 'marketContract');
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('tokenCreators()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.tokenCreators(1)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function tokenCreators(uint256 tokenId) public view returns (address)',
         'tokenCreators',
@@ -514,15 +511,15 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('bidSharesForToken()', () => {
-    it('anyone should be able to call the fn', async () => {
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.bidSharesForToken(0)).to.not.be.reverted;
     });
 
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function bidSharesForToken(uint256 tokenId) public view returns (((uint256),(uint256),(uint256)) memory bidShares)',
         'bidSharesForToken',
@@ -530,25 +527,22 @@ describe.only('HolographRoyalties Contract', async function () {
       );
     });
 
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('getTokenAddress()', () => {
-    const tokenName = `Sample ERC721 Contract (${l1.network.holographId.toString()})`;
-
-    it('anyone should be able to call the fn', async () => {
+    const tokenName = 'Sample ERC721 Contract';
+    it('anyone should be able to call the function', async () => {
       await expect(royalties.getTokenAddress(tokenName)).to.not.be.reverted;
     });
-
-    it('should allow external contract to call fn', async () => {
+    it('should allow external contract to call the function', async () => {
       await testExternalCallToFunction(
         'function getTokenAddress(string memory tokenName) public view returns (address)',
         'getTokenAddress',
         [tokenName]
       );
     });
-
-    it('should allow inherited contract to call fn');
+    it('should allow inherited contract to call the function');
   });
 
   describe('Royalties Distribution Validation', () => {

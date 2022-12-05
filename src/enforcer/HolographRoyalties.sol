@@ -13,6 +13,8 @@ import "../interface/HolographRoyaltiesInterface.sol";
 
 import "../struct/ZoraBidShares.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @title HolographRoyalties (previously PA1D)
  * @author CXIP-Labs
@@ -322,12 +324,15 @@ contract HolographRoyalties is Admin, Owner, Initializable {
     }
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
-      // If the contract enabled extended call on init then use call to transfer, otherwise use transfer
-      if (extendedCall == true) {
-        (bool success, ) = addresses[i].call{value: sending}("");
-        require(success, "ROYALTIES: Transfer failed");
-      } else {
-        addresses[i].transfer(sending);
+      // Transfer will revert if the the value is zero
+      if (sending > 0) {
+        // If the contract enabled extended call on init then use call to transfer, otherwise use transfer
+        if (extendedCall == true) {
+          (bool success, ) = addresses[i].call{value: sending}("");
+          require(success, "RoyaltyPayout: Extended call failed");
+        } else {
+          addresses[i].transfer(sending);
+        }
       }
     }
   }
@@ -435,7 +440,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
    * @param bps An array of the percentages that each address will receive from the royalty payouts.
    */
   function configurePayouts(address payable[] memory addresses, uint256[] memory bps) public onlyOwner {
-    require(addresses.length == bps.length, "ROYALTIES: missmatched lenghts");
+    require(addresses.length == bps.length, "ROYALTIES: missmatched lengths");
     require(addresses.length <= 10, "ROYALTIES: max 10 addresses");
     uint256 totalBp;
     for (uint256 i = 0; i < addresses.length; i++) {
