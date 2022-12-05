@@ -427,6 +427,8 @@ contract HolographRoyalties is Admin, Owner, Initializable {
 
   /**
    * @notice Set the wallets and percentages for royalty payouts.
+   *         Limited to 10 wallets to prevent out of gas errors.
+   *         For more complex royalty structures, set 100% ownership payout with the recipient being the payment distribution contract.
    * @dev Function can only we called by owner, admin, or identity wallet.
    * @dev Addresses and bps arrays must be equal length. Bps values added together must equal 10000 exactly.
    * @param addresses An array of all the addresses that will be receiving royalty payouts.
@@ -434,6 +436,7 @@ contract HolographRoyalties is Admin, Owner, Initializable {
    */
   function configurePayouts(address payable[] memory addresses, uint256[] memory bps) public onlyOwner {
     require(addresses.length == bps.length, "ROYALTIES: missmatched lenghts");
+    require(addresses.length <= 10, "ROYALTIES: max 10 addresses");
     uint256 totalBp;
     for (uint256 i = 0; i < addresses.length; i++) {
       require(addresses[i] != address(0), "ROYALTIES: payee is zero address");
