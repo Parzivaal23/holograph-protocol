@@ -546,8 +546,6 @@ describe.only('HolographRoyalties Contract', async function () {
   });
 
   describe('Royalties Distribution Validation', () => {
-    const errorMargin = ethers.utils.parseUnits('2000', 'wei');
-
     describe('A collection with 1 recipient', async () => {
       const totalRoyalties = ethers.utils.parseEther('1');
 
@@ -632,14 +630,8 @@ describe.only('HolographRoyalties Contract', async function () {
         const fortyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(40).div(100);
 
         expect(contractBalanceAfter).to.be.lt(contractBalanceBefore);
-        expect(Number(accountABalanceAfter)).to.be.approximately(
-          Number(sixtyPercentOfRoyalties.add(accountABalanceBefore)),
-          Number(errorMargin)
-        );
-        expect(Number(accountBBalanceAfter)).to.be.approximately(
-          Number(fortyPercentOfRoyalties.add(accountBBalanceBefore)),
-          Number(errorMargin)
-        );
+        expect(Number(accountABalanceAfter)).to.be.equal(Number(sixtyPercentOfRoyalties.add(accountABalanceBefore)));
+        expect(Number(accountBBalanceAfter)).to.be.equal(Number(fortyPercentOfRoyalties.add(accountBBalanceBefore)));
       });
 
       it('should be able to withdraw balance of an ERC20 token', async () => {
@@ -711,18 +703,9 @@ describe.only('HolographRoyalties Contract', async function () {
         const thirtyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(30).div(100);
 
         expect(contractBalanceAfter).to.be.lt(contractBalanceBefore);
-        expect(Number(accountABalanceAfter)).to.be.approximately(
-          Number(twentyPercentOfRoyalties.add(accountABalanceBefore)),
-          Number(errorMargin)
-        );
-        expect(Number(accountBBalanceAfter)).to.be.approximately(
-          Number(fiftyPercentOfRoyalties.add(accountBBalanceBefore)),
-          Number(errorMargin)
-        );
-        expect(Number(accountCBalanceAfter)).to.be.approximately(
-          Number(thirtyPercentOfRoyalties.add(accountCBalanceBefore)),
-          Number(errorMargin)
-        );
+        expect(Number(accountABalanceAfter)).to.be.equal(Number(twentyPercentOfRoyalties.add(accountABalanceBefore)));
+        expect(Number(accountBBalanceAfter)).to.be.equal(Number(fiftyPercentOfRoyalties.add(accountBBalanceBefore)));
+        expect(Number(accountCBalanceAfter)).to.be.equal(Number(thirtyPercentOfRoyalties.add(accountCBalanceBefore)));
       });
       it('should be able to withdraw balance of an ERC20 token', async () => {
         const ERC20 = await l1.holographErc20.attach(l1.sampleErc20Holographer.address);
