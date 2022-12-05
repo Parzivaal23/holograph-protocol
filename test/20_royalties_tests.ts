@@ -12,7 +12,7 @@ import {
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import Web3 from 'web3';
 
-describe('HolographRoyalties Contract', async function () {
+describe.only('HolographRoyalties Contract', async function () {
   let royalties: HolographRoyalties;
   let l1: PreTest;
   let mockExternalCall: MockExternalCall;
@@ -256,6 +256,17 @@ describe('HolographRoyalties Contract', async function () {
 
       await expect(l1.factory.connect(owner).adminCall(royalties.address, data)).to.be.revertedWith(
         'ROYALTIES: missmatched lenghts'
+      );
+    });
+
+    it('should fail if there are more than 10 payout addresses', async () => {
+      const addresses = Array.from({ length: 11 }, () => anyAddress);
+      const bps = Array.from({ length: 11 }, () => 10);
+
+      let data = (await royalties.populateTransaction.configurePayouts(addresses, bps)).data || '';
+
+      await expect(l1.factory.connect(owner).adminCall(royalties.address, data)).to.be.revertedWith(
+        'ROYALTIES: max 10 addresses'
       );
     });
 
