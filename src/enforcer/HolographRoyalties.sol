@@ -1,154 +1,62 @@
-// SPDX-License-Identifier: UNLICENSED
-/*
+/*HOLOGRAPH_LICENSE_HEADER*/
 
-                         ┌───────────┐
-                         │ HOLOGRAPH │
-                         └───────────┘
-╔═════════════════════════════════════════════════════════════╗
-║                                                             ║
-║                            / ^ \                            ║
-║                            ~~*~~            ¸               ║
-║                         [ '<>:<>' ]         │░░░            ║
-║               ╔╗           _/"\_           ╔╣               ║
-║             ┌─╬╬─┐          """          ┌─╬╬─┐             ║
-║          ┌─┬┘ ╠╣ └┬─┐       \_/       ┌─┬┘ ╠╣ └┬─┐          ║
-║       ┌─┬┘ │  ╠╣  │ └┬─┐           ┌─┬┘ │  ╠╣  │ └┬─┐       ║
-║    ┌─┬┘ │  │  ╠╣  │  │ └┬─┐     ┌─┬┘ │  │  ╠╣  │  │ └┬─┐    ║
-║ ┌─┬┘ │  │  │  ╠╣  │  │  │ └┬┐ ┌┬┘ │  │  │  ╠╣  │  │  │ └┬─┐ ║
-╠┬┘ │  │  │  │  ╠╣  │  │  │  │└¤┘│  │  │  │  ╠╣  │  │  │  │ └┬╣
-║│  │  │  │  │  ╠╣  │  │  │  │   │  │  │  │  ╠╣  │  │  │  │  │║
-╠╩══╩══╩══╩══╩══╬╬══╩══╩══╩══╩═══╩══╩══╩══╩══╬╬══╩══╩══╩══╩══╩╣
-╠┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴╬╬┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴╬╬┴┴┴┴┴┴┴┴┴┴┴┴┴┴┴╣
-║               ╠╣                           ╠╣               ║
-║               ╠╣                           ╠╣               ║
-║    ,          ╠╣     ,        ,'      *    ╠╣               ║
-║~~~~~^~~~~~~~~┌╬╬┐~~~^~~~~~~~~^^~~~~~~~~^~~┌╬╬┐~~~~~~~^~~~~~~║
-╚══════════════╩╩╩╩═════════════════════════╩╩╩╩══════════════╝
-     - one protocol, one bridge = infinite possibilities -
-
-
- ***************************************************************
-
- DISCLAIMER: U.S Patent Pending
-
- LICENSE: Holograph Limited Public License (H-LPL)
-
- https://holograph.xyz/licenses/h-lpl/1.0.0
-
- This license governs use of the accompanying software. If you
- use the software, you accept this license. If you do not accept
- the license, you are not permitted to use the software.
-
- 1. Definitions
-
- The terms "reproduce," "reproduction," "derivative works," and
- "distribution" have the same meaning here as under U.S.
- copyright law. A "contribution" is the original software, or
- any additions or changes to the software. A "contributor" is
- any person that distributes its contribution under this
- license. "Licensed patents" are a contributor’s patent claims
- that read directly on its contribution.
-
- 2. Grant of Rights
-
- A) Copyright Grant- Subject to the terms of this license,
- including the license conditions and limitations in sections 3
- and 4, each contributor grants you a non-exclusive, worldwide,
- royalty-free copyright license to reproduce its contribution,
- prepare derivative works of its contribution, and distribute
- its contribution or any derivative works that you create.
- B) Patent Grant- Subject to the terms of this license,
- including the license conditions and limitations in section 3,
- each contributor grants you a non-exclusive, worldwide,
- royalty-free license under its licensed patents to make, have
- made, use, sell, offer for sale, import, and/or otherwise
- dispose of its contribution in the software or derivative works
- of the contribution in the software.
-
- 3. Conditions and Limitations
-
- A) No Trademark License- This license does not grant you rights
- to use any contributors’ name, logo, or trademarks.
- B) If you bring a patent claim against any contributor over
- patents that you claim are infringed by the software, your
- patent license from such contributor is terminated with
- immediate effect.
- C) If you distribute any portion of the software, you must
- retain all copyright, patent, trademark, and attribution
- notices that are present in the software.
- D) If you distribute any portion of the software in source code
- form, you may do so only under this license by including a
- complete copy of this license with your distribution. If you
- distribute any portion of the software in compiled or object
- code form, you may only do so under a license that complies
- with this license.
- E) The software is licensed “as-is.” You bear all risks of
- using it. The contributors give no express warranties,
- guarantees, or conditions. You may have additional consumer
- rights under your local laws which this license cannot change.
- To the extent permitted under your local laws, the contributors
- exclude all implied warranties, including those of
- merchantability, fitness for a particular purpose and
- non-infringement.
-
- 4. (F) Platform Limitation- The licenses granted in sections
- 2.A & 2.B extend only to the software or derivative works that
- you create that run on a Holograph system product.
-
- ***************************************************************
-
-*/
-
-pragma solidity 0.8.13;
+/*SOLIDITY_COMPILER_VERSION*/
 
 import "../abstract/Admin.sol";
 import "../abstract/Initializable.sol";
 import "../abstract/Owner.sol";
 
 import "../interface/ERC20.sol";
+import "../interface/HolographerInterface.sol";
 import "../interface/InitializableInterface.sol";
-import "../interface/PA1DInterface.sol";
+import "../interface/HolographRoyaltiesInterface.sol";
 
 import "../struct/ZoraBidShares.sol";
 
 /**
- * @title PA1D (CXIP)
+ * @title HolographRoyalties (previously PA1D)
  * @author CXIP-Labs
  * @notice A smart contract for providing royalty info, collecting royalties, and distributing it to configured payout wallets.
  * @dev This smart contract is not intended to be used directly. Apply it to any of your ERC721 or ERC1155 smart contracts through a delegatecall fallback.
  */
-contract PA1D is Admin, Owner, Initializable {
+contract HolographRoyalties is Admin, Owner, Initializable {
   /**
-   * @dev bytes32(uint256(keccak256('eip1967.Holograph.PA1D.defaultBp')) - 1)
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.ROYALTIES.defaultBp')) - 1)
    */
-  bytes32 constant _defaultBpSlot = 0x3ab91e3c2ba71a57537d782545f8feb1d402b604f5e070fa6c3b911fc2f18f75;
+  bytes32 constant _defaultBpSlot = precomputeslot("eip1967.Holograph.ROYALTIES.defaultBp");
   /**
-   * @dev bytes32(uint256(keccak256('eip1967.Holograph.PA1D.defaultReceiver')) - 1)
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.ROYALTIES.defaultReceiver')) - 1)
    */
-  bytes32 constant _defaultReceiverSlot = 0xfd430e1c7265cc31dbd9a10ce657e68878a41cfe179c80cd68c5edf961516848;
+  bytes32 constant _defaultReceiverSlot = precomputeslot("eip1967.Holograph.ROYALTIES.defaultReceiver");
   /**
-   * @dev bytes32(uint256(keccak256('eip1967.Holograph.PA1D.initialized')) - 1)
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.ROYALTIES.initialized')) - 1)
    */
-  bytes32 constant _initializedPaidSlot = 0x33a44e907d5bf333e203bebc20bb8c91c00375213b80f466a908f3d50b337c6c;
+  bytes32 constant _initializedPaidSlot = precomputeslot("eip1967.Holograph.ROYALTIES.initialized");
   /**
-   * @dev bytes32(uint256(keccak256('eip1967.Holograph.PA1D.payout.addresses')) - 1)
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.ROYALTIES.payout.addresses')) - 1)
    */
-  bytes32 constant _payoutAddressesSlot = 0x700a541bc37f227b0d36d34e7b77cc0108bde768297c6f80f448f380387371df;
+  bytes32 constant _payoutAddressesSlot = precomputeslot("eip1967.Holograph.ROYALTIES.payout.addresses");
   /**
-   * @dev bytes32(uint256(keccak256('eip1967.Holograph.PA1D.payout.bps')) - 1)
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.ROYALTIES.payout.bps')) - 1)
    */
-  bytes32 constant _payoutBpsSlot = 0x7a62e8104cd2cc2ef6bd3a26bcb71428108fbe0e0ead6a5bfb8676781e2ed28d;
+  bytes32 constant _payoutBpsSlot = precomputeslot("eip1967.Holograph.ROYALTIES.payout.bps");
+  /**
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.ROYALTIES.extendedCall')) - 1)
+   * @dev extendedCall is an init config used to determine if payouts should be sent via a call or a transfer.
+   */
+  bytes32 constant _extendedCallSlot = precomputeslot("eip1967.Holograph.ROYALTIES.extendedCall");
 
-  string constant _bpString = "eip1967.Holograph.PA1D.bp";
-  string constant _receiverString = "eip1967.Holograph.PA1D.receiver";
-  string constant _tokenAddressString = "eip1967.Holograph.PA1D.tokenAddress";
+  string constant _bpString = "eip1967.Holograph.ROYALTIES.bp";
+  string constant _receiverString = "eip1967.Holograph.ROYALTIES.receiver";
+  string constant _tokenAddressString = "eip1967.Holograph.ROYALTIES.tokenAddress";
 
   /**
    * @notice Event emitted when setting/updating royalty info/fees. This is used by Rarible V1.
    * @dev Emits event in order to comply with Rarible V1 royalty spec.
    * @param tokenId Specific token id for which royalty info is being set, set as 0 for all tokens inside of the smart contract.
    * @param recipients Address array of wallets that will receive tha royalties.
-   * @param bps Uint256 array of base points(percentages) that each wallet(specified in recipients) will receive from the royalty payouts. Make sure that all the base points add up to a total of 10000.
+   * @param bps Uint256 array of base points(percentages) that each wallet(specified in recipients) will receive from the royalty payouts.
+   *            Make sure that all the base points add up to a total of 10000.
    */
   event SecondarySaleFees(uint256 tokenId, address[] recipients, uint256[] bps);
 
@@ -156,7 +64,7 @@ contract PA1D is Admin, Owner, Initializable {
    * @dev Use this modifier to lock public functions that should not be accesible to non-owners.
    */
   modifier onlyOwner() override {
-    require(isOwner(), "PA1D: caller not an owner");
+    require(isOwner(), "ROYALTIES: caller not an owner");
     _;
   }
 
@@ -171,25 +79,37 @@ contract PA1D is Admin, Owner, Initializable {
    * @param initPayload abi encoded payload to use for contract initilaization
    */
   function init(bytes memory initPayload) external override returns (bytes4) {
-    require(!_isInitialized(), "PA1D: already initialized");
+    require(!_isInitialized(), "ROYALTIES: already initialized");
     assembly {
       sstore(_adminSlot, caller())
       sstore(_ownerSlot, caller())
     }
-    (address receiver, uint256 bp) = abi.decode(initPayload, (address, uint256));
-    setRoyalties(0, payable(receiver), bp);
+    uint256 bp = abi.decode(initPayload, (uint256));
+    setRoyalties(0, payable(address(this)), bp);
     _setInitialized();
     return InitializableInterface.init.selector;
   }
 
-  function initPA1D(bytes memory initPayload) external returns (bytes4) {
+  function initHolographRoyalties(bytes memory initPayload) external returns (bytes4) {
     uint256 initialized;
     assembly {
       initialized := sload(_initializedPaidSlot)
     }
-    require(initialized == 0, "PA1D: already initialized");
-    (address receiver, uint256 bp) = abi.decode(initPayload, (address, uint256));
-    setRoyalties(0, payable(receiver), bp);
+    require(initialized == 0, "ROYALTIES: already initialized");
+    (uint256 bp, uint256 useExtenededCall) = abi.decode(initPayload, (uint256, uint256));
+    if (useExtenededCall > 0) {
+      useExtenededCall = 1;
+    }
+    assembly {
+      sstore(_extendedCallSlot, useExtenededCall)
+    }
+    setRoyalties(0, payable(address(this)), bp);
+    address payable[] memory addresses = new address payable[](1);
+    addresses[0] = payable(getOwner());
+    uint256[] memory bps = new uint256[](1);
+    bps[0] = 10000;
+    _setPayoutAddresses(addresses);
+    _setPayoutBps(bps);
     initialized = 1;
     assembly {
       sstore(_initializedPaidSlot, initialized)
@@ -205,8 +125,14 @@ contract PA1D is Admin, Owner, Initializable {
   function isOwner() private view returns (bool) {
     return (msg.sender == getOwner() ||
       msg.sender == getAdmin() ||
-      msg.sender == Owner(address(this)).getOwner() ||
-      msg.sender == Admin(address(this)).getAdmin());
+      msg.sender == Owner(HolographerInterface(address(this)).getSourceContract()).owner());
+  }
+
+  /**
+   * @dev This is here in place to prevent reverts in case contract is used outside of the protocol.
+   */
+  function getSourceContract() external view returns (address sourceContract) {
+    sourceContract = address(this);
   }
 
   /**
@@ -377,29 +303,44 @@ contract PA1D is Admin, Owner, Initializable {
   }
 
   /**
-   * @dev Internal function that transfers ETH to all payout recipients.
+   * @dev Private function that transfers ETH to all payout recipients.
+   * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
+   * @dev This function uses a push payment model, where the contract pushes the ETH to the recipients.
+   * @dev The design is intended so that royalty distribution logic can be handled externally via payment distribution contracts.
+   * @dev The recommended usage for royalty structures that require more complex payout logic to multiple recipients is to
+   *      set 100% ownership payout with the recipient being the payment distribution contract.
    */
   function _payoutEth() private {
     address payable[] memory addresses = _getPayoutAddresses();
     uint256[] memory bps = _getPayoutBps();
     uint256 length = addresses.length;
-    // accommodating the 2300 gas stipend
-    // adding 1x for each item in array to accomodate rounding errors
-    uint256 gasCost = (23300 * length) + length;
     uint256 balance = address(this).balance;
-    require(balance - gasCost > 10000, "PA1D: Not enough ETH to transfer");
-    balance = balance - gasCost;
     uint256 sending;
-    // uint256 sent;
+    bool extendedCall;
+    assembly {
+      extendedCall := sload(_extendedCallSlot)
+    }
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
-      addresses[i].transfer(sending);
-      // sent = sent + sending;
+      // If the contract enabled extended call on init then use call to transfer, otherwise use transfer
+      if (extendedCall == true) {
+        (bool success, ) = addresses[i].call{value: sending}("");
+        require(success, "ROYALTIES: Transfer failed");
+      } else {
+        addresses[i].transfer(sending);
+      }
     }
   }
 
   /**
-   * @dev Internal function that transfers tokens to all payout recipients.
+   * @dev Private function that transfers tokens to all payout recipients.
+   * @dev ERC20 tokens that use fee on transfer are not supported.
+   * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
+   * @dev This function uses a push payment model, where the contract pushes the ETH to the recipients.
+   * @dev The design is intended so that royalty distribution logic can be handled externally via payment distribution contracts.
+   * @dev The recommended usage for royalty structures that require more complex payout logic to multiple recipients is to
+   *      set 100% ownership payout with the recipient being the payment distribution contract.
+   *
    * @param tokenAddress Smart contract address of ERC20 token.
    */
   function _payoutToken(address tokenAddress) private {
@@ -408,19 +349,34 @@ contract PA1D is Admin, Owner, Initializable {
     uint256 length = addresses.length;
     ERC20 erc20 = ERC20(tokenAddress);
     uint256 balance = erc20.balanceOf(address(this));
-    require(balance > 10000, "PA1D: Not enough tokens to transfer");
     uint256 sending;
-    //uint256 sent;
     for (uint256 i = 0; i < length; i++) {
       sending = ((bps[i] * balance) / 10000);
-      require(erc20.transfer(addresses[i], sending), "PA1D: Couldn't transfer token");
-      // sent = sent + sending;
+      // Some tokens revert when transferring a zero value amount this check ensures if one recipient's
+      // amount is zero, the transfer will still succeed for the other recipients.
+      if (sending > 0) {
+        require(
+          _callOptionalReturn(
+            tokenAddress,
+            erc20.transfer.selector,
+            abi.encode(address(addresses[i]), uint256(sending))
+          ),
+          "ROYALTIES: ERC20 transfer failed"
+        );
+      }
     }
   }
 
   /**
-   * @dev Internal function that transfers multiple tokens to all payout recipients.
+   * @dev Private function that transfers multiple tokens to all payout recipients.
    * @dev Try to use _payoutToken and handle each token individually.
+   * @dev ERC20 tokens that use fee on transfer are not supported.
+   * @dev This contract is designed primarily to capture royalties, but is limited in payout logic.
+   * @dev This function uses a push payment model, where the contract pushes the ETH to the recipients.
+   * @dev The design is intended so that royalty distribution logic can be handled externally via payment distribution contracts.
+   * @dev The recommended usage for royalty structures that require more complex payout logic to multiple recipients is to
+   *      set 100% ownership payout with the recipient being the payment distribution contract.
+   *
    * @param tokenAddresses Array of smart contract addresses of ERC20 tokens.
    */
   function _payoutTokens(address[] memory tokenAddresses) private {
@@ -432,12 +388,20 @@ contract PA1D is Admin, Owner, Initializable {
     for (uint256 t = 0; t < tokenAddresses.length; t++) {
       erc20 = ERC20(tokenAddresses[t]);
       balance = erc20.balanceOf(address(this));
-      require(balance > 10000, "PA1D: Not enough tokens to transfer");
-      // uint256 sent;
       for (uint256 i = 0; i < addresses.length; i++) {
         sending = ((bps[i] * balance) / 10000);
-        require(erc20.transfer(addresses[i], sending), "PA1D: Couldn't transfer token");
-        // sent = sent + sending;
+        // Some tokens revert when transferring a zero value amount this check ensures if one recipient's
+        // amount is zero, the transfer will still succeed for the other recipients.
+        if (sending > 0) {
+          require(
+            _callOptionalReturn(
+              tokenAddresses[t],
+              erc20.transfer.selector,
+              abi.encode(address(addresses[i]), uint256(sending))
+            ),
+            "ROYALTIES: ERC20 transfer failed"
+          );
+        }
       }
     }
   }
@@ -457,24 +421,29 @@ contract PA1D is Admin, Owner, Initializable {
           break;
         }
       }
-      require(matched, "PA1D: sender not authorized");
+      require(matched, "ROYALTIES: sender not authorized");
     }
   }
 
   /**
    * @notice Set the wallets and percentages for royalty payouts.
+   *         Limited to 10 wallets to prevent out of gas errors.
+   *         For more complex royalty structures, set 100% ownership payout with the recipient being the payment distribution contract.
    * @dev Function can only we called by owner, admin, or identity wallet.
    * @dev Addresses and bps arrays must be equal length. Bps values added together must equal 10000 exactly.
    * @param addresses An array of all the addresses that will be receiving royalty payouts.
    * @param bps An array of the percentages that each address will receive from the royalty payouts.
    */
   function configurePayouts(address payable[] memory addresses, uint256[] memory bps) public onlyOwner {
-    require(addresses.length == bps.length, "PA1D: missmatched array lenghts");
+    require(addresses.length == bps.length, "ROYALTIES: missmatched lenghts");
+    require(addresses.length <= 10, "ROYALTIES: max 10 addresses");
     uint256 totalBp;
     for (uint256 i = 0; i < addresses.length; i++) {
+      require(addresses[i] != address(0), "ROYALTIES: payee is zero address");
+      require(bps[i] > 0, "ROYALTIES: bp is zero");
       totalBp = totalBp + bps[i];
     }
-    require(totalBp == 10000, "PA1D: bps down't equal 10000");
+    require(totalBp == 10000, "ROYALTIES: bps must equal 10000");
     _setPayoutAddresses(addresses);
     _setPayoutBps(bps);
   }
@@ -531,6 +500,7 @@ contract PA1D is Admin, Owner, Initializable {
     address payable receiver,
     uint256 bp
   ) public onlyOwner {
+    require(receiver != address(0), "ROYALTIES: receiver is zero address");
     if (tokenId == 0) {
       _setDefaultReceiver(receiver);
       _setDefaultBp(bp);
@@ -667,9 +637,9 @@ contract PA1D is Admin, Owner, Initializable {
     bidShares.prevOwner.value = 0;
     bidShares.owner.value = 0;
     if (_getReceiver(tokenId) == address(0)) {
-      bidShares.creator.value = _getDefaultBp();
+      bidShares.creator.value = _getDefaultBp() * (10**16);
     } else {
-      bidShares.creator.value = _getBp(tokenId);
+      bidShares.creator.value = _getBp(tokenId) * (10**16);
     }
     return bidShares;
   }
@@ -682,5 +652,34 @@ contract PA1D is Admin, Owner, Initializable {
    */
   function getTokenAddress(string memory tokenName) public view returns (address) {
     return _getTokenAddress(tokenName);
+  }
+
+  /**
+   * @notice Used to wrap function calls to check if they return without revert regardless of return type.
+   * @dev Checks if wrapped function opcode is a revert, if it is then it reverts as well, if it's not then
+   *      it checks for return data, if return data exists, it is returned as a bool,
+   *      if return data does not exist (0 length) then success is expected and returns true
+   * @return Returns true if the wrapped function call returns without a revert even if it doesn't return true.
+   */
+  function _callOptionalReturn(
+    address target,
+    bytes4 functionSignature,
+    bytes memory payload
+  ) internal returns (bool) {
+    bytes memory data = abi.encodePacked(functionSignature, payload);
+    bool success = true;
+    assembly {
+      let result := call(gas(), target, callvalue(), add(data, 0x20), mload(data), 0, 0)
+      switch result
+      case 0 {
+        revert(0, returndatasize())
+      }
+      default {
+        if gt(returndatasize(), 0) {
+          returndatacopy(success, 0, 0x20)
+        }
+      }
+    }
+    return success;
   }
 }
