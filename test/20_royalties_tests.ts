@@ -707,6 +707,7 @@ describe.only('HolographRoyalties Contract', async function () {
         expect(Number(accountBBalanceAfter)).to.be.equal(Number(fiftyPercentOfRoyalties.add(accountBBalanceBefore)));
         expect(Number(accountCBalanceAfter)).to.be.equal(Number(thirtyPercentOfRoyalties.add(accountCBalanceBefore)));
       });
+
       it('should be able to withdraw balance of an ERC20 token', async () => {
         const ERC20 = await l1.holographErc20.attach(l1.sampleErc20Holographer.address);
         const SAMPLEERC20 = await l1.sampleErc20.attach(l1.sampleErc20Holographer.address);
@@ -737,6 +738,29 @@ describe.only('HolographRoyalties Contract', async function () {
         expect(accountBBalanceAfter).to.be.equal(accountBBalanceBefore.add(fiftyPercentOfRoyalties));
         expect(accountCBalanceAfter).to.be.equal(accountCBalanceBefore.add(thirtyPercentOfRoyalties));
       });
+    });
+  });
+
+  describe('A collection with zero royalties', async () => {
+    before(async () => {
+      const data = (await royalties.populateTransaction.configurePayouts([owner.address], [10000])).data || '';
+      const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
+      await tx.wait();
+    });
+
+    it('should be able to withdraw all native token balance', async () => {
+      const accountBalanceBefore = await ethers.provider.getBalance(owner.address);
+      const contractBalanceBefore = await ethers.provider.getBalance(royalties.address);
+
+      const data = (await royalties.populateTransaction.getEthPayout()).data || '';
+      const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
+      await tx.wait();
+
+      const accountBalanceAfter = await ethers.provider.getBalance(owner.address);
+      const contractBalanceAfter = await ethers.provider.getBalance(royalties.address);
+
+      expect(contractBalanceAfter).to.be.eq(contractBalanceBefore);
+      expect(accountBalanceAfter).to.be.eq(accountBalanceBefore);
     });
   });
 });
