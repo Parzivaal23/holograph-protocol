@@ -11,7 +11,7 @@ import {
 } from './utils/error_constants';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 
-describe.only('HolographRoyalties Contract', async function () {
+describe('HolographRoyalties Contract', async function () {
   let royalties: HolographRoyalties;
   let ERC20: HolographERC20;
   let l1: PreTest;
@@ -556,6 +556,7 @@ describe.only('HolographRoyalties Contract', async function () {
       });
 
       it('should be able to withdraw all native token balance', async () => {
+        const initialContractBalance = await ethers.provider.getBalance(royalties.address);
         await owner.sendTransaction({
           to: royalties.address,
           value: totalRoyalties,
@@ -571,13 +572,15 @@ describe.only('HolographRoyalties Contract', async function () {
         const accountBalanceAfter = await ethers.provider.getBalance(owner.address);
         const contractBalanceAfter = await ethers.provider.getBalance(royalties.address);
 
-        expect(contractBalanceAfter).to.be.lt(contractBalanceBefore);
-        expect(accountBalanceAfter).to.be.gt(accountBalanceBefore);
+        expect(contractBalanceBefore).to.equal(totalRoyalties);
+        expect(contractBalanceAfter).to.be.eq(initialContractBalance);
+        expect(accountBalanceAfter).to.be.eq(accountBalanceBefore.add(totalRoyalties));
       });
 
       it('should be able to withdraw balance of an ERC20 token', async () => {
         const ERC20 = await l1.holographErc20.attach(l1.sampleErc20Holographer.address);
         const SAMPLEERC20 = await l1.sampleErc20.attach(l1.sampleErc20Holographer.address);
+        const initialContractBalance = await ERC20.balanceOf(royalties.address);
 
         await SAMPLEERC20.mint(owner.address, totalRoyalties);
         await ERC20.transfer(royalties.address, totalRoyalties);
@@ -592,8 +595,9 @@ describe.only('HolographRoyalties Contract', async function () {
         const accountBalanceAfter = await ERC20.balanceOf(owner.address);
         const contractBalanceAfter = await ERC20.balanceOf(royalties.address);
 
-        expect(contractBalanceAfter).to.be.lt(contractBalanceBefore);
-        expect(accountBalanceAfter).to.be.gt(accountBalanceBefore);
+        expect(contractBalanceBefore).to.equal(totalRoyalties);
+        expect(contractBalanceAfter).to.be.eq(initialContractBalance);
+        expect(accountBalanceAfter).to.be.eq(accountBalanceBefore.add(totalRoyalties));
       });
     });
 
@@ -609,6 +613,7 @@ describe.only('HolographRoyalties Contract', async function () {
       });
 
       it('should be able to withdraw all native token balance', async () => {
+        const initialContractBalance = await ethers.provider.getBalance(royalties.address);
         await owner.sendTransaction({
           to: royalties.address,
           value: totalRoyalties,
@@ -629,14 +634,16 @@ describe.only('HolographRoyalties Contract', async function () {
         const sixtyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(60).div(100);
         const fortyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(40).div(100);
 
-        expect(contractBalanceAfter).to.be.lt(contractBalanceBefore);
-        expect(Number(accountABalanceAfter)).to.be.equal(Number(sixtyPercentOfRoyalties.add(accountABalanceBefore)));
-        expect(Number(accountBBalanceAfter)).to.be.equal(Number(fortyPercentOfRoyalties.add(accountBBalanceBefore)));
+        expect(contractBalanceBefore).to.equal(totalRoyalties);
+        expect(contractBalanceAfter).to.be.eq(initialContractBalance);
+        expect(Number(accountABalanceAfter)).to.be.eq(Number(sixtyPercentOfRoyalties.add(accountABalanceBefore)));
+        expect(Number(accountBBalanceAfter)).to.be.eq(Number(fortyPercentOfRoyalties.add(accountBBalanceBefore)));
       });
 
       it('should be able to withdraw balance of an ERC20 token', async () => {
         const ERC20 = await l1.holographErc20.attach(l1.sampleErc20Holographer.address);
         const SAMPLEERC20 = await l1.sampleErc20.attach(l1.sampleErc20Holographer.address);
+        const initialContractBalance = await ERC20.balanceOf(royalties.address);
 
         await SAMPLEERC20.mint(owner.address, totalRoyalties);
         await ERC20.transfer(royalties.address, totalRoyalties);
@@ -656,9 +663,10 @@ describe.only('HolographRoyalties Contract', async function () {
         const sixtyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(60).div(100);
         const fortyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(40).div(100);
 
-        expect(contractBalanceAfter).to.be.lt(contractBalanceBefore);
-        expect(accountABalanceAfter).to.be.equal(accountABalanceBefore.add(sixtyPercentOfRoyalties));
-        expect(accountBBalanceAfter).to.be.equal(accountBBalanceBefore.add(fortyPercentOfRoyalties));
+        expect(contractBalanceBefore).to.equal(totalRoyalties);
+        expect(contractBalanceAfter).to.be.eq(initialContractBalance);
+        expect(accountABalanceAfter).to.be.eq(accountABalanceBefore.add(sixtyPercentOfRoyalties));
+        expect(accountBBalanceAfter).to.be.eq(accountBBalanceBefore.add(fortyPercentOfRoyalties));
       });
     });
 
@@ -679,6 +687,7 @@ describe.only('HolographRoyalties Contract', async function () {
       });
 
       it('should be able to withdraw all native token balance', async () => {
+        const initialContractBalance = await ethers.provider.getBalance(royalties.address);
         await owner.sendTransaction({
           to: royalties.address,
           value: totalRoyalties,
@@ -702,15 +711,17 @@ describe.only('HolographRoyalties Contract', async function () {
         const fiftyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(50).div(100);
         const thirtyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(30).div(100);
 
-        expect(contractBalanceAfter).to.be.lt(contractBalanceBefore);
-        expect(Number(accountABalanceAfter)).to.be.equal(Number(twentyPercentOfRoyalties.add(accountABalanceBefore)));
-        expect(Number(accountBBalanceAfter)).to.be.equal(Number(fiftyPercentOfRoyalties.add(accountBBalanceBefore)));
-        expect(Number(accountCBalanceAfter)).to.be.equal(Number(thirtyPercentOfRoyalties.add(accountCBalanceBefore)));
+        expect(contractBalanceBefore).to.equal(totalRoyalties);
+        expect(contractBalanceAfter).to.be.eq(initialContractBalance);
+        expect(Number(accountABalanceAfter)).to.be.eq(Number(twentyPercentOfRoyalties.add(accountABalanceBefore)));
+        expect(Number(accountBBalanceAfter)).to.be.eq(Number(fiftyPercentOfRoyalties.add(accountBBalanceBefore)));
+        expect(Number(accountCBalanceAfter)).to.be.eq(Number(thirtyPercentOfRoyalties.add(accountCBalanceBefore)));
       });
 
       it('should be able to withdraw balance of an ERC20 token', async () => {
         const ERC20 = await l1.holographErc20.attach(l1.sampleErc20Holographer.address);
         const SAMPLEERC20 = await l1.sampleErc20.attach(l1.sampleErc20Holographer.address);
+        const initialContractBalance = await ERC20.balanceOf(royalties.address);
 
         await SAMPLEERC20.mint(owner.address, totalRoyalties);
         await ERC20.transfer(royalties.address, totalRoyalties);
@@ -733,15 +744,17 @@ describe.only('HolographRoyalties Contract', async function () {
         const fiftyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(50).div(100);
         const thirtyPercentOfRoyalties = contractBalanceBefore.sub(contractBalanceAfter).mul(30).div(100);
 
-        expect(contractBalanceAfter).to.be.lt(contractBalanceBefore);
-        expect(accountABalanceAfter).to.be.equal(accountABalanceBefore.add(twentyPercentOfRoyalties));
-        expect(accountBBalanceAfter).to.be.equal(accountBBalanceBefore.add(fiftyPercentOfRoyalties));
-        expect(accountCBalanceAfter).to.be.equal(accountCBalanceBefore.add(thirtyPercentOfRoyalties));
+        expect(contractBalanceBefore).to.equal(totalRoyalties);
+        expect(contractBalanceAfter).to.be.eq(initialContractBalance);
+        expect(accountABalanceAfter).to.be.eq(accountABalanceBefore.add(twentyPercentOfRoyalties));
+        expect(accountBBalanceAfter).to.be.eq(accountBBalanceBefore.add(fiftyPercentOfRoyalties));
+        expect(accountCBalanceAfter).to.be.eq(accountCBalanceBefore.add(thirtyPercentOfRoyalties));
       });
     });
   });
 
   describe('A collection with zero royalties', async () => {
+    const totalRoyalties = ethers.utils.parseEther('0');
     before(async () => {
       const data = (await royalties.populateTransaction.configurePayouts([owner.address], [10000])).data || '';
       const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
@@ -749,6 +762,7 @@ describe.only('HolographRoyalties Contract', async function () {
     });
 
     it('should be able to withdraw all native token balance', async () => {
+      const initialContractBalance = await ethers.provider.getBalance(royalties.address);
       const accountBalanceBefore = await ethers.provider.getBalance(owner.address);
       const contractBalanceBefore = await ethers.provider.getBalance(royalties.address);
 
@@ -759,8 +773,33 @@ describe.only('HolographRoyalties Contract', async function () {
       const accountBalanceAfter = await ethers.provider.getBalance(owner.address);
       const contractBalanceAfter = await ethers.provider.getBalance(royalties.address);
 
+      expect(contractBalanceBefore).to.equal(totalRoyalties);
+      expect(contractBalanceAfter).to.be.eq(initialContractBalance);
       expect(contractBalanceAfter).to.be.eq(contractBalanceBefore);
       expect(accountBalanceAfter).to.be.eq(accountBalanceBefore);
+    });
+
+    it('should be able to withdraw  balance of an ERC20 token', async () => {
+      const ERC20 = await l1.holographErc20.attach(l1.sampleErc20Holographer.address);
+      const SAMPLEERC20 = await l1.sampleErc20.attach(l1.sampleErc20Holographer.address);
+      const initialContractBalance = await ERC20.balanceOf(royalties.address);
+
+      await SAMPLEERC20.mint(owner.address, totalRoyalties);
+      await ERC20.transfer(royalties.address, totalRoyalties);
+
+      const contractBalanceBefore = await ERC20.balanceOf(royalties.address);
+      const accountBalanceBefore = await ERC20.balanceOf(owner.address);
+
+      const data = (await royalties.populateTransaction.getTokenPayout(ERC20.address)).data || '';
+      const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
+      await tx.wait();
+
+      const accountBalanceAfter = await ERC20.balanceOf(owner.address);
+      const contractBalanceAfter = await ERC20.balanceOf(royalties.address);
+
+      expect(contractBalanceBefore).to.equal(totalRoyalties);
+      expect(contractBalanceAfter).to.be.eq(initialContractBalance);
+      expect(accountBalanceAfter).to.be.eq(accountBalanceBefore.add(totalRoyalties));
     });
   });
 });
