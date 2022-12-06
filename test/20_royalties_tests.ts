@@ -327,10 +327,18 @@ describe('HolographRoyalties Contract', async function () {
       await tx.wait();
     });
 
-    it.skip('A authorized address should be able to call the function', async () => {
+    it('A authorized address should be able to call the function', async () => {
       // TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
+      const addresses = [mockExternalCall.address];
+      const bps = [10000];
+
+      let data = (await royalties.populateTransaction.configurePayouts(addresses, bps)).data || '';
+
+      const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
+      await tx.wait();
+
       await testExternalCallToFunction('function getTokenPayout(address tokenAddress) public', 'getTokenPayout', [
-        mockExternalCall.address,
+        ERC20.address,
       ]);
     });
 
@@ -348,12 +356,20 @@ describe('HolographRoyalties Contract', async function () {
       await tx.wait();
     });
 
-    it.skip('A authorized address should be able to call the function', async () => {
+    it('A authorized address should be able to call the function', async () => {
       // TODO: wait for contract changes, if the contract balance is less than the gasCost it should revert with a error msg
+      const addresses = [mockExternalCall.address];
+      const bps = [10000];
+
+      let data = (await royalties.populateTransaction.configurePayouts(addresses, bps)).data || '';
+
+      const tx = await l1.factory.connect(owner).adminCall(royalties.address, data);
+      await tx.wait();
+
       await testExternalCallToFunction(
         'function getTokensPayout(address[] memory tokenAddresses) public',
         'getTokensPayout',
-        [[mockExternalCall.address]]
+        [[ERC20.address]]
       );
     });
 
