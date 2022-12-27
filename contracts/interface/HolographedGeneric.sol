@@ -112,4 +112,6 @@ interface HolographedGeneric {
     address _sender,
     bytes calldata _payload
   ) external returns (bytes memory _data);
+
+  function withdraw(address payable destinationAddress) external;
 }
