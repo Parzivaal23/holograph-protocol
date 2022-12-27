@@ -87,7 +87,13 @@
     "type": "function"
   },
   {
-    "inputs": [],
+    "inputs": [
+      {
+        "internalType": "address payable",
+        "name": "destinationAddress",
+        "type": "address"
+      }
+    ],
     "name": "withdraw",
     "outputs": [],
     "stateMutability": "nonpayable",
