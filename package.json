@@ -46,7 +46,7 @@
     "lint:fix": "eslint . --ext .ts --config .eslintrc --fix",
     "prettier:check": "prettier --ignore-unknown --check \"deploy/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\"",
     "prettier:fix": "prettier --loglevel error --ignore-path .gitignore --write .",
-    "coverage": "hardhat coverage"
+    "coverage": "hardhat coverage",
     "prettier:deployments": "hardhat deploymentsPrettier"
   },
   "dependencies": {
