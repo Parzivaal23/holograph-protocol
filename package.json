@@ -47,6 +47,7 @@
     "prettier:check": "prettier --ignore-unknown --check \"deploy/**/*.ts\" \"test/**/*.ts\" \"scripts/**/*.ts\"",
     "prettier:fix": "prettier --loglevel error --ignore-path .gitignore --write .",
     "coverage": "hardhat coverage",
+    "coverage:dev": "hardhat coverage --network localhost --testfiles 'test/{10,12,16}*.ts'",
     "prettier:deployments": "hardhat deploymentsPrettier"
   },
   "dependencies": {
