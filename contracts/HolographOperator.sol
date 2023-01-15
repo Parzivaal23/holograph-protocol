@@ -152,6 +152,10 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
    * @dev bytes32(uint256(keccak256('eip1967.Holograph.utilityToken')) - 1)
    */
   bytes32 constant _utilityTokenSlot = 0xbf76518d46db472b71aa7677a0908b8016f3dee568415ffa24055f9a670f9c37;
+  /**
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.minGasPrice')) - 1)
+   */
+  bytes32 constant _minGasPriceSlot = 0x264d744422f7427cd080572c35c848b6cd3a36da6b47519af89ef13098b12fc0;
 
   /**
    * @dev Internal number (in seconds), used for defining a window for operator to execute the job
@@ -233,10 +237,14 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
    */
   function init(bytes memory initPayload) external override returns (bytes4) {
     require(!_isInitialized(), "HOLOGRAPH: already initialized");
-    (address bridge, address holograph, address interfaces, address registry, address utilityToken) = abi.decode(
-      initPayload,
-      (address, address, address, address, address)
-    );
+    (
+      address bridge,
+      address holograph,
+      address interfaces,
+      address registry,
+      address utilityToken,
+      uint256 minGasPrice
+    ) = abi.decode(initPayload, (address, address, address, address, address, uint256));
     assembly {
       sstore(_adminSlot, origin())
       sstore(_bridgeSlot, bridge)
@@ -244,6 +252,7 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
       sstore(_interfacesSlot, interfaces)
       sstore(_registrySlot, registry)
       sstore(_utilityTokenSlot, utilityToken)
+      sstore(_minGasPriceSlot, minGasPrice)
     }
     _blockTime = 60; // 60 seconds allowed for execution
     unchecked {
@@ -263,6 +272,19 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
     _operatorData[address(0)]._bondedOperator = 1;
     _setInitialized();
     return InitializableInterface.init.selector;
+  }
+
+  /**
+   * @notice Recover failed job
+   * @dev If a job fails, it can be manually recovered
+   * @param bridgeInRequestPayload the entire cross chain message payload
+   */
+  function recoverJob(bytes calldata bridgeInRequestPayload) external payable {
+    bytes32 hash = keccak256(bridgeInRequestPayload);
+    require(_failedJobs[hash], "HOLOGRAPH: invalid recovery job");
+    (bool success, ) = _bridge().call{value: msg.value}(bridgeInRequestPayload);
+    require(success, "HOLOGRAPH: recovery failed");
+    delete (_failedJobs[hash]);
   }
 
   /**
@@ -357,9 +379,9 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
         /**
          * @dev only allow HLG rewards to go to bonded operators
          *      if operator is bonded, the slashed amount is sent to current operator
-         *      otherwise it's sent to HLG directly, can be burned or sent to treasury from there
+         *      otherwise it's sent to HolographTreasury, can be burned or distributed from there
          */
-        _utilityToken().transfer((isBonded ? msg.sender : address(_utilityToken())), amount);
+        _utilityToken().transfer((isBonded ? msg.sender : address(_holograph().getTreasury())), amount);
         /**
          * @dev check if slashed operator has enough tokens bonded to stay
          */
@@ -396,9 +418,9 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
     /**
      * @dev reward operator (with HLG) for executing the job
      *      this is out of scope and is purposefully omitted from code
-     *      currently reward is statically set to 1 token
+     *      currently no rewards are issued
      */
-    _utilityToken().transfer((isBonded ? msg.sender : address(_utilityToken())), (10**18));
+    //_utilityToken().transfer((isBonded ? msg.sender : address(_utilityToken())), (10**18));
     /**
      * @dev always emit an event at end of job, this helps other operators keep track of job status
      */
@@ -418,6 +440,8 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
     {
       /// @dev do nothing
     } catch {
+      /// @dev return any payed funds in case of revert
+      payable(msg.sender).transfer(msg.value);
       _failedJobs[hash] = true;
       emit FailedOperatorJob(hash);
     }
@@ -468,10 +492,14 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
    */
   function crossChainMessage(bytes calldata bridgeInRequestPayload) external payable {
     require(msg.sender == address(_messagingModule()), "HOLOGRAPH: messaging only call");
-    /**
-     * @dev would be a good idea to check payload gas price here and if it is significantly lower than current amount
-     *      to set zero address as operator to not lock-up an operator unnecessarily
-     */
+    uint256 gasPrice = 0;
+    assembly {
+      /**
+       * @dev extract gasPrice
+       */
+      gasPrice := calldataload(sub(add(bridgeInRequestPayload.offset, bridgeInRequestPayload.length), 0x20))
+    }
+    bool underpriced = gasPrice < _minGasPrice();
     unchecked {
       bytes32 jobHash = keccak256(bridgeInRequestPayload);
       /**
@@ -482,10 +510,16 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
        * @dev use job hash, job nonce, block number, and block timestamp for generating a random number
        */
       uint256 random = uint256(keccak256(abi.encodePacked(jobHash, _jobNonce(), block.number, block.timestamp)));
+      // use the left 128 bits of random number
+      uint256 random1 = uint256(random >> 128);
+      // use the right 128 bits of random number
+      uint256 random2 = uint256(uint128(random));
+      // combine the two new random numbers for use in additional pod operator selection logic
+      random = uint256(keccak256(abi.encodePacked(random1 + random2)));
       /**
        * @dev divide by total number of pods, use modulus/remainder
        */
-      uint256 pod = random % _operatorPods.length;
+      uint256 pod = random1 % _operatorPods.length;
       /**
        * @dev identify the total number of available operators in pod
        */
@@ -493,7 +527,7 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
       /**
        * @dev select a primary operator
        */
-      uint256 operatorIndex = random % podSize;
+      uint256 operatorIndex = underpriced ? 0 : random2 % podSize;
       /**
        * @dev If operator index is 0, then it's open season! Anyone can execute this job. First come first serve
        *      pop operator to ensure that they cannot be selected for any other job until this one completes
@@ -508,11 +542,11 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
         ((pod + 1) << 248) |
           (uint256(_operatorTempStorageCounter) << 216) |
           (block.number << 176) |
-          (_randomBlockHash(random, podSize, 1) << 160) |
-          (_randomBlockHash(random, podSize, 2) << 144) |
-          (_randomBlockHash(random, podSize, 3) << 128) |
-          (_randomBlockHash(random, podSize, 4) << 112) |
-          (_randomBlockHash(random, podSize, 5) << 96) |
+          ((underpriced ? 0 : _randomBlockHash(random, podSize, 1)) << 160) |
+          ((underpriced ? 0 : _randomBlockHash(random, podSize, 2)) << 144) |
+          ((underpriced ? 0 : _randomBlockHash(random, podSize, 3)) << 128) |
+          ((underpriced ? 0 : _randomBlockHash(random, podSize, 4)) << 112) |
+          ((underpriced ? 0 : _randomBlockHash(random, podSize, 5)) << 96) |
           (block.timestamp << 16) |
           0
       ); // 80 next available bit position && so far 176 bits used with only 128 left
@@ -858,10 +892,10 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
     /**
      * @dev an operator can only bond to one pod at any give time per network
      */
-    require(
-      _operatorData[operator]._bondedOperator == 0 && _operatorData[operator]._bondedAmount == 0,
-      "HOLOGRAPH: operator is bonded"
-    );
+    require(_bondedOperators[operator] == 0 && _bondedAmounts[operator] == 0, "HOLOGRAPH: operator is bonded");
+    if (_isContract(operator)) {
+      require(Ownable(operator).owner() != address(0), "HOLOGRAPH: contract not ownable");
+    }
     unchecked {
       /**
        * @dev get the current bonding minimum for selected pod
@@ -875,7 +909,7 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
         /**
          * @dev activate pod(s) up until the selected pod
          */
-        for (uint256 i = _operatorPods.length; i <= pod; i++) {
+        for (uint256 i = _operatorPods.length; i < pod; i++) {
           /**
            * @dev add zero address into pod to mitigate empty pod issues
            */
@@ -919,7 +953,7 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
       /**
        * @dev check if smart contract is owned by sender
        */
-      require(Ownable(operator).isOwner(msg.sender), "HOLOGRAPH: sender not owner");
+      require(Ownable(operator).owner() == msg.sender, "HOLOGRAPH: sender not owner");
     }
     /**
      * @dev get current bonded amount by operator
@@ -1060,6 +1094,26 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
   }
 
   /**
+   * @notice Get the Minimum Gas Price
+   * @dev The minimum value required to execute a job without it being marked as under priced
+   */
+  function getMinGasPrice() external view returns (uint256 minGasPrice) {
+    assembly {
+      minGasPrice := sload(_minGasPriceSlot)
+    }
+  }
+
+  /**
+   * @notice Update the Minimum Gas Price
+   * @param minGasPrice amount to set for minimum gas price
+   */
+  function setMinGasPrice(uint256 minGasPrice) external onlyAdmin {
+    assembly {
+      sstore(_minGasPriceSlot, minGasPrice)
+    }
+  }
+
+  /**
    * @dev Internal function used for getting the Holograph Bridge Interface
    */
   function _bridge() private view returns (address bridge) {
@@ -1110,6 +1164,15 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
   function _utilityToken() private view returns (HolographERC20Interface utilityToken) {
     assembly {
       utilityToken := sload(_utilityTokenSlot)
+    }
+  }
+
+  /**
+   * @dev Internal function used for getting the minimum gas price allowed
+   */
+  function _minGasPrice() private view returns (uint256 minGasPrice) {
+    assembly {
+      minGasPrice := sload(_minGasPriceSlot)
     }
   }
 
