@@ -97,5 +97,10 @@
     "ts-node": "^10.1.0",
     "typechain": "^7.0.0",
     "typescript": "^4.3.5"
+  },
+  "overrides": {
+    "hardhat-gas-reporter": {
+      "yargs-unparser": "2.0.0"
+    }
   }
 }
