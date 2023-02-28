@@ -329,6 +329,7 @@ const config: HardhatUserConfig = {
       polygonMumbai: POLYGONSCAN_API_KEY,
       avalanche: AVALANCHE_API_KEY,
       avalancheFujiTestnet: AVALANCHE_API_KEY,
+      optimisticGoerli: 'TY5BYI8ZBWJ224YC8DWTYPI4E6IF7R8D1M',
     },
   },
   hardhatHolographContractBuilder: {
