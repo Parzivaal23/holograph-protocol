@@ -73,7 +73,9 @@ export class GasService {
       let remainder: BigNumber;
       if (tx.maxFeePerGas === undefined || tx.maxPriorityFeePerGas === undefined) {
         // we have a legacy transaction here, so need to calculate priority fee out
-        priorityFee = tx.gasPrice!.sub(block.baseFeePerGas!);
+        if (tx.gasPrice !== undefined) {
+          priorityFee = tx.gasPrice!.sub(block.baseFeePerGas!);
+        }
       } else {
         // we have EIP-1559 transaction here, get priority fee
         // check first that base block fee is less than maxFeePerGas
