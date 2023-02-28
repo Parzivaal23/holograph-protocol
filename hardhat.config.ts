@@ -98,6 +98,7 @@ const POLYGON_TESTNET_PRIVATE_KEY = process.env.POLYGON_TESTNET_PRIVATE_KEY || D
 const ETHERSCAN_API_KEY: string = process.env.ETHERSCAN_API_KEY || '';
 const POLYGONSCAN_API_KEY: string = process.env.POLYGONSCAN_API_KEY || '';
 const AVALANCHE_API_KEY: string = process.env.AVALANCHE_API_KEY || '';
+const OPTIMISM_API_KEY: string = process.env.OPTIMISM_API_KEY || '';
 
 const selectDeploymentSalt = (): number => {
   let salt;
@@ -329,7 +330,7 @@ const config: HardhatUserConfig = {
       polygonMumbai: POLYGONSCAN_API_KEY,
       avalanche: AVALANCHE_API_KEY,
       avalancheFujiTestnet: AVALANCHE_API_KEY,
-      optimisticGoerli: 'TY5BYI8ZBWJ224YC8DWTYPI4E6IF7R8D1M',
+      optimisticGoerli: OPTIMISM_API_KEY,
     },
   },
   hardhatHolographContractBuilder: {
