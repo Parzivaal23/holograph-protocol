@@ -39,6 +39,9 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
     );
   }
 
+  global.__txNonce = {};
+  global.__txNonce[hre.networkName] = 109;
+
   const web3 = new Web3();
 
   const salt = hre.deploymentSalt;
@@ -46,6 +49,10 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
   const network = networks[hre.networkName];
 
   const holograph = await hre.ethers.getContract('Holograph', deployer);
+
+  global.__holographAddress = holograph.address.toLowerCase();
+
+  hre.deployments.log('holograph', holograph.address, 'global.__holographAddress', global.__holographAddress);
 
   const registry = (await hre.ethers.getContractAt(
     'HolographRegistry',
@@ -78,6 +85,7 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
         gasLimit: await hre.ethers.provider.estimateGas(
           (await hre.ethers.getContractFactory('TempHtokenFix')).getDeployTransaction()
         ),
+        nonce: 110,
       })),
       args: [],
       log: true,
@@ -88,42 +96,57 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
 
   const erc20hash = '0x' + web3.utils.asciiToHex('HolographERC20').substring(2).padStart(64, '0');
 
-  const hToken = await hre.ethers.getContractAt('TempHtokenFix', await registry.getHToken(chainId));
+  const hToken = (await hre.ethers.getContractAt(
+    'TempHtokenFix',
+    await registry.getHToken(chainId),
+    deployer
+  )) as Contract;
   const originalErc20Source = await registry.getReservedContractTypeAddress(erc20hash);
 
-  const tx1 = await holograph.populateTransaction.adminCall(
-    registry.address,
-    (
-      await registry.populateTransaction.setContractTypeAddress(erc20hash, tempHtokenFixContract.address)
-    ).data
+  process.stdout.write("\n\n originalErc20Source == " + originalErc20Source + "\n\n");
+  // originalErc20Source == 0x8B87DA5c07c274cdA919D906305f09397A6E714B
+
+  const tx1 = await MultisigAwareTx(
+    hre,
+    deployer,
+    await registry.populateTransaction.setContractTypeAddress(erc20hash, tempHtokenFixContract.address, {
+      ...(await txParams({
+        hre,
+        from: deployer,
+        to: registry,
+        data: registry.populateTransaction.setContractTypeAddress(erc20hash, tempHtokenFixContract.address),
+        nonce: 111,
+      })),
+    })
   );
-  const tx2 = await hToken.populateTransaction.withdraw();
-  const tx3 = await holograph.populateTransaction.adminCall(
-    registry.address,
-    (
-      await registry.populateTransaction.setContractTypeAddress(erc20hash, originalErc20Source)
-    ).data
+
+  const tx2 = await hToken.withdraw({
+    ...(await txParams({
+      hre,
+      from: deployer,
+      to: hToken,
+      data: hToken.populateTransaction.withdraw(),
+      nonce: 112,
+    })),
+  });
+
+  const tx3 = await MultisigAwareTx(
+    hre,
+    deployer,
+    await registry.populateTransaction.setContractTypeAddress(erc20hash, '0x8B87DA5c07c274cdA919D906305f09397A6E714B', {
+      ...(await txParams({
+        hre,
+        from: deployer,
+        to: registry,
+        data: registry.populateTransaction.setContractTypeAddress(erc20hash, '0x8B87DA5c07c274cdA919D906305f09397A6E714B'),
+        nonce: 113,
+      })),
+    })
   );
-  process.stdout.write(
-    JSON.stringify(
-      {
-        tx1: {
-          to: holograph.address,
-          data: tx1.data,
-        },
-        tx2: {
-          to: hToken.address,
-          data: tx2.data,
-        },
-        tx3: {
-          to: holograph.address,
-          data: tx3.data,
-        },
-      },
-      undefined,
-      2
-    )
-  );
+
+  const tx1result = await tx1.wait();
+  const tx2result = await tx2.wait();
+  const tx3result = await tx3.wait();
 
   /*
 

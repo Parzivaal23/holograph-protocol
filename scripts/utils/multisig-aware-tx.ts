@@ -61,6 +61,7 @@ const MultisigAwareTx = async (
             from: deployer,
             to: holograph,
             data: holograph.populateTransaction.adminCall(futureTx.to, futureTx.data),
+            nonce: futureTx.nonce,
           })),
         })) as ContractTransaction;
       } else {
