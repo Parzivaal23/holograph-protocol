@@ -103,7 +103,7 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
   )) as Contract;
   const originalErc20Source = await registry.getReservedContractTypeAddress(erc20hash);
 
-  process.stdout.write("\n\n originalErc20Source == " + originalErc20Source + "\n\n");
+  process.stdout.write('\n\n originalErc20Source == ' + originalErc20Source + '\n\n');
   // originalErc20Source == 0x8B87DA5c07c274cdA919D906305f09397A6E714B
 
   const tx1 = await MultisigAwareTx(
@@ -138,7 +138,10 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
         hre,
         from: deployer,
         to: registry,
-        data: registry.populateTransaction.setContractTypeAddress(erc20hash, '0x8B87DA5c07c274cdA919D906305f09397A6E714B'),
+        data: registry.populateTransaction.setContractTypeAddress(
+          erc20hash,
+          '0x8B87DA5c07c274cdA919D906305f09397A6E714B'
+        ),
         nonce: 113,
       })),
     })
