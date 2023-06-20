@@ -129,7 +129,7 @@ import "../interface/Ownable.sol";
 
 /**
  * @title Holograph Bridgeable ERC-20 Token
- * @author CXIP-Labs
+ * @author Holograph Foundation
  * @notice A smart contract for minting and managing Holograph Bridgeable ERC20 Tokens.
  * @dev The entire logic and functionality of the smart contract is self-contained.
  */
@@ -256,7 +256,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
     assembly {
       calldatacopy(0, 0, calldatasize())
       mstore(calldatasize(), caller())
-      let result := call(gas(), sload(_sourceContractSlot), callvalue(), 0, add(calldatasize(), 32), 0, 0)
+      let result := call(gas(), sload(_sourceContractSlot), callvalue(), 0, add(calldatasize(), 0x20), 0, 0)
       returndatacopy(0, 0, returndatasize())
       switch result
       case 0 {
@@ -273,14 +273,25 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
    */
   function _sourceCall(bytes memory payload) private returns (bool output) {
     assembly {
+      mstore(add(payload, add(mload(payload), 0x20)), caller())
+      // offset memory position by 32 bytes to skip the 32 bytes where bytes length is stored
+      // add 32 bytes to bytes length to include the appended msg.sender to calldata
+      let result := call(
+        gas(),
+        sload(_sourceContractSlot),
+        callvalue(),
+        add(payload, 0x20),
+        add(mload(payload), 0x20),
+        0,
+        0
+      )
       let pos := mload(0x40)
-      mstore(0x40, add(pos, 0x20))
-      mstore(add(payload, mload(payload)), caller())
-      let result := call(gas(), sload(_sourceContractSlot), callvalue(), payload, add(mload(payload), 0x20), 0, 0)
+      // reserve memory space for return data
+      mstore(0x40, add(pos, returndatasize()))
       returndatacopy(pos, 0, returndatasize())
       switch result
       case 0 {
-        revert(0, returndatasize())
+        revert(pos, returndatasize())
       }
       output := mload(pos)
     }
@@ -576,11 +587,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
     return safeTransfer(recipient, amount, "");
   }
 
-  function safeTransfer(
-    address recipient,
-    uint256 amount,
-    bytes memory data
-  ) public returns (bool) {
+  function safeTransfer(address recipient, uint256 amount, bytes memory data) public returns (bool) {
     if (_isEventRegistered(HolographERC20Event.beforeSafeTransfer)) {
       require(
         _sourceCall(
@@ -599,11 +606,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
     return true;
   }
 
-  function safeTransferFrom(
-    address account,
-    address recipient,
-    uint256 amount
-  ) public returns (bool) {
+  function safeTransferFrom(address account, address recipient, uint256 amount) public returns (bool) {
     return safeTransferFrom(account, recipient, amount, "");
   }
 
@@ -669,11 +672,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   /**
    * @dev Allows for source smart contract to transfer tokens.
    */
-  function sourceTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) external onlySource {
+  function sourceTransfer(address from, address to, uint256 amount) external onlySource {
     _transfer(from, to, amount);
   }
 
@@ -699,11 +698,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
     return true;
   }
 
-  function transferFrom(
-    address account,
-    address recipient,
-    uint256 amount
-  ) public returns (bool) {
+  function transferFrom(address account, address recipient, uint256 amount) public returns (bool) {
     if (account != msg.sender) {
       /*
        * @dev This is intentionally enabled to remove friction when operator or bridge needs to move tokens
@@ -728,11 +723,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
     return true;
   }
 
-  function _approve(
-    address account,
-    address spender,
-    uint256 amount
-  ) private {
+  function _approve(address account, address spender, uint256 amount) private {
     require(account != address(0), "ERC20: account is zero address");
     require(spender != address(0), "ERC20: spender is zero address");
     _allowances[account][spender] = amount;
@@ -747,7 +738,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
       _balances[account] = accountBalance - amount;
     }
     _totalSupply -= amount;
-    emit Transfer(account, address(0), amount);
+    _registryTransfer(account, address(0), amount);
   }
 
   /**
@@ -760,14 +751,10 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
     require(to != address(0), "ERC20: minting to burn address");
     _totalSupply += amount;
     _balances[to] += amount;
-    emit Transfer(address(0), to, amount);
+    _registryTransfer(address(0), to, amount);
   }
 
-  function _transfer(
-    address account,
-    address recipient,
-    uint256 amount
-  ) private {
+  function _transfer(address account, address recipient, uint256 amount) private {
     require(account != address(0), "ERC20: account is zero address");
     require(recipient != address(0), "ERC20: recipient is zero address");
     uint256 accountBalance = _balances[account];
@@ -776,7 +763,20 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
       _balances[account] = accountBalance - amount;
     }
     _balances[recipient] += amount;
-    emit Transfer(account, recipient, amount);
+    _registryTransfer(account, recipient, amount);
+  }
+
+  function _registryTransfer(address _from, address _to, uint256 _amount) private {
+    emit Transfer(_from, _to, _amount);
+    HolographRegistryInterface(_holograph().getRegistry()).holographableEvent(
+      abi.encode(
+        // keccak256("TransferERC20(address,address,uint256)")
+        bytes32(0x9b035625e569d1d2bf54830a290aefba7ab11610ba8490871dc62b86b63a8956),
+        _from,
+        _to,
+        _amount
+      )
+    );
   }
 
   /**
@@ -800,12 +800,7 @@ contract HolographERC20 is Admin, Owner, Initializable, NonReentrant, EIP712, Ho
   /**
    * @dev Internal function used for identifying signer
    */
-  function _recover(
-    bytes32 r,
-    bytes32 s,
-    uint8 v,
-    bytes32 hash
-  ) private pure returns (address signer) {
+  function _recover(bytes32 r, bytes32 s, uint8 v, bytes32 hash) private pure returns (address signer) {
     if (v < 27) {
       v += 27;
     }

@@ -24,7 +24,7 @@ Holograph provides omnichain NFT infrastructure for the web3 ecosystem. Holograp
 
 ## Specification
 
-Please reference the [documentation](https://docs.holograph.xyz/holograph-protocol/technical-specification) for the full technical specification of the protocol
+Please reference the [documentation](https://docs.holograph.xyz/holograph-protocol/technical-specification) for the full technical specification of the protocol.
 
 ## Architecture
 
@@ -82,9 +82,9 @@ Holographer exists at the core of all _Holographed_ smart contracts, which is ap
 
 Enforcer enables and ensures complete standards, compliance, and operability for a given standard type. HolographERC20 and HolographERC721 are perfect examples of such Enforcers. Enforcers store and manage all data within themselves to ensure security, compliance, integrity, and enforcement of all protocols. Communication is established with custom contracts via specific event hooks. The storage/data layer is isolated privately and not directly accessible by custom contracts.
 
-#### PA1D.sol
+#### HolographRoyalties.sol
 
-PA1D is an on-chain royalties contract for non-fungible token types. It supports a universal module that understands and speaks all of the different royalty standards on the blockchain. PA1D is built to be extendable and can have new royalty standards implemented as they are created and agreed upon.
+HolographRoyalties is an on-chain royalties contract for non-fungible token types. It supports a universal module that understands and speaks all of the different royalty standards on the blockchain. HolographRoyalties is built to be extendable and can have new royalty standards implemented as they are created and agreed upon.
 
 #### Interfaces.sol
 
@@ -158,11 +158,9 @@ To become an operator, you must view the pods available to join, select a pod, a
 
 At step 1, you call `getTotalPods` method to get a list of available pods. If the length of pod is zero, then you can bond into pod `1`.
 
-At step 2, when you call `getPodBondAmounts`, you will get two values: [`_base`, `current`]. The `base` value represents the original minimum bond requirement to join the pod, while the `current` value is the current amount you must provide to join the pod. Please refer to here [TODO - ADD LINK] for more info.
+At step 2, when you call `getPodBondAmounts`, you will get two values: [`_base`, `current`]. The `base` value represents the original minimum bond requirement to join the pod, while the `current` value is the current amount you must provide to join the pod.
 
 At step 3, you are now able to call the `bondUtilityToken` function with the pod and amounts you want to use to enter the pod. Please note, there is a minimum bond requirement to join but no maximum.
-
-You are now an 0perator. We will launch a CLI in the future that will process jobs on your behalf.
 
 ### Leaving Pods
 
@@ -170,7 +168,7 @@ To leave a pod, you have to call the `unbondUtilityToken` in `HolographOperator.
 
 ### Processing Jobs
 
-You must join a pod to become an Oper ator. The simplified code path for operating is:
+You must join a pod to become an operator. The simplified code path for operating is:
 
 1. Receive new Block from the network
 2. Iterate over block looking for event `AvailableOperatorJob(jobHash, bridgeInRequestPayload);`
@@ -205,6 +203,29 @@ At step 5, the wallet sends a transaction to the `exectureJob` method on the `Ho
 When the project is built, the code in the `src` folder gets written to the `contracts` folder. The files in the `contracts` folder are the "real" files that are used for testing and code verification on all the scanners.
 
 Again, files from the `src` directory are automatically transpiled into the `contracts` directory each time that **hardhat** compiles the contracts.
+
+### Running tests
+
+> NOTE: At this time some tests require hardcoded referencing hardcoded addresses on the local network that are deployed deterministically based on a salt parameter that is stored in the `.env` file. For local development, please set `DEVELOP_DEPLOYMENT_SALT=1000`.
+
+There are two sets of tests. The main test suite uses Hardhat. To run them start your local chains that the contracts will be deployed to using:
+
+`yarn run ganache-x2`
+
+Keep in mind that two networks are spun up in order to facilitate the multichain tests that bridge from one network to the other.
+Next run the hardhat tests with:
+
+`yarn test`
+
+The newer tests for Drops use Foundry. Please make sure you have Foundry installed by following the instructions [here](https://github.com/foundry-rs/foundry).
+
+Currently the Foundry tests require "forking" from a local chain that has the rest of the Holograph protocol contracts already deployed. To do this, with the local ganache chains still running from the `ganache-x2` command mentioned above, run deploy with:
+
+`yarn deploy:localhost`
+
+Then you can run the Foundry tests with:
+
+`forge test`
 
 ### Making Changes
 
@@ -263,6 +284,34 @@ Our primary development branch is [`develop`](https://github.com/holographxyz/ho
 
 Our primary experimentation branch is [`experimental`](https://github.com/holographxyz/holograph-protocol/tree/experimental).
 `experimental` contains the software that is not stable and is trying out new code.
+
+## Deployment Process
+
+1. Validate env variables are correct
+   1. Check Salts
+   2. Check RPCS
+   3. Check `HOLOGRAPH_ENVIRONMENT`
+2. Check Git commit reference
+3. Clean Repo
+   1. Remove temp folders: [node_modules, artifacts, cache, cache_hardhat, dist, typechain-types, ganache]
+4. Run Tests
+   1. run `yarn clean-compile`
+   2. run `yarn ganache-x2` - terminal 1
+   3. run `yarn deploy` - terminal 2
+5. Run Deployments per environment, check gas chane per network again, and save output
+   1. avalanche
+      1. Check price envs
+      2. Save output to deploymentHistory. NOTE remove directory info.
+   2. mumbai
+      1. Check price envs
+      2. Save output to deploymentHistory. NOTE remove directory info.
+   3. goerli
+      1. Check price envs
+      2. Save output to deploymentHistory. NOTE remove directory info.
+   4. binance
+      1. Check price envs
+      2. Save output to deploymentHistory. NOTE remove directory info.
+6. Validate Contracts on each network
 
 ## Contributing
 

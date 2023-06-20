@@ -20,7 +20,7 @@ import "../interface/Ownable.sol";
 
 /**
  * @title Holograph Bridgeable Generic Contract
- * @author CXIP-Labs
+ * @author Holograph Foundation
  * @notice A smart contract for creating custom bridgeable logic.
  * @dev The entire logic and functionality of the smart contract is self-contained.
  */
@@ -119,7 +119,7 @@ contract HolographGeneric is Admin, Owner, Initializable, HolographGenericInterf
     assembly {
       calldatacopy(0, 0, calldatasize())
       mstore(calldatasize(), caller())
-      let result := call(gas(), sload(_sourceContractSlot), callvalue(), 0, add(calldatasize(), 32), 0, 0)
+      let result := call(gas(), sload(_sourceContractSlot), callvalue(), 0, add(calldatasize(), 0x20), 0, 0)
       returndatacopy(0, 0, returndatasize())
       switch result
       case 0 {
@@ -135,8 +135,18 @@ contract HolographGeneric is Admin, Owner, Initializable, HolographGenericInterf
     assembly {
       let pos := mload(0x40)
       mstore(0x40, add(pos, 0x20))
-      mstore(add(payload, mload(payload)), caller())
-      let result := call(gas(), sload(_sourceContractSlot), callvalue(), payload, add(mload(payload), 0x20), 0, 0)
+      mstore(add(payload, add(mload(payload), 0x20)), caller())
+      // offset memory position by 32 bytes to skip the 32 bytes where bytes length is stored
+      // add 32 bytes to bytes length to include the appended msg.sender to calldata
+      let result := call(
+        gas(),
+        sload(_sourceContractSlot),
+        callvalue(),
+        add(payload, 0x20),
+        add(mload(payload), 0x20),
+        0,
+        0
+      )
       returndatacopy(pos, 0, returndatasize())
       switch result
       case 0 {
@@ -231,23 +241,14 @@ contract HolographGeneric is Admin, Owner, Initializable, HolographGenericInterf
     }
   }
 
-  function sourceEmit(
-    bytes32 eventId,
-    bytes32 topic1,
-    bytes calldata eventData
-  ) external onlySource {
+  function sourceEmit(bytes32 eventId, bytes32 topic1, bytes calldata eventData) external onlySource {
     assembly {
       calldatacopy(0, eventData.offset, eventData.length)
       log2(0, eventData.length, eventId, topic1)
     }
   }
 
-  function sourceEmit(
-    bytes32 eventId,
-    bytes32 topic1,
-    bytes32 topic2,
-    bytes calldata eventData
-  ) external onlySource {
+  function sourceEmit(bytes32 eventId, bytes32 topic1, bytes32 topic2, bytes calldata eventData) external onlySource {
     assembly {
       calldatacopy(0, eventData.offset, eventData.length)
       log3(0, eventData.length, eventId, topic1, topic2)
