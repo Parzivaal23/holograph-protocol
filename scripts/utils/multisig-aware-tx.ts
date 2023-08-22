@@ -184,7 +184,7 @@ const MultisigAwareTx = async (
   }
   // check if deployer is admin
   if (admin === deployer.address.toLowerCase()) {
-    // return (await deployer.sendTransaction(futureTx)) as ContractTransaction; // Temporarily disabled
+    // return (await deployer.sendTransaction(futureTx)) as ContractTransaction; // TEMPORARY DISABLED
   } else {
     // deployer is not admin
     // check if holograph is admin
@@ -273,7 +273,7 @@ const MultisigAwareTx = async (
 
         if (
           admin === network.protocolMultisig.toLowerCase() ||
-          // admin === '0x6429b42da2a06aa1c46710509fc96e846f46181e' // TEMPORARY
+          admin === '0x6429b42da2a06aa1c46710509fc96e846f46181e'
         ) {
           // here we need to call function directly on contract
           // this is a multisig owned contracts, so instructions need to be provided to multisig
