@@ -1,6 +1,7 @@
 declare var global: any;
 import { formatUnits } from '@ethersproject/units';
 import { BigNumber } from '@ethersproject/bignumber';
+import { NetworkKeys, networks } from '@holographxyz/networks';
 import { Block, BlockWithTransactions, TransactionResponse } from '@ethersproject/abstract-provider';
 import { WebSocketProvider, JsonRpcProvider, Web3Provider } from '@ethersproject/providers';
 import { GasPricing, initializeGasPricing, updateGasPricing } from './gas';
@@ -86,12 +87,28 @@ export class GasService {
       } else {
         this.gasPrice.nextPriorityFee = this.gasPrice.nextPriorityFee!.add(priorityFee).div(TWO);
       }
+      if (this.gasPrice.nextPriorityFee.lt(ZERO)) {
+        this.gasPrice.nextPriorityFee = ZERO;
+      }
     }
-    // for legacy networks, get average gasPrice
-    else if (this.gasPrice.gasPrice === null) {
-      this.gasPrice.gasPrice = tx.gasPrice!;
-    } else {
-      this.gasPrice.gasPrice = this.gasPrice.gasPrice!.add(tx.gasPrice!).div(TWO);
+    // for legacy networks (non EIP-1559), get average rolling gasPrice
+    // it's important to skip this calculation if gas price is 0, which happens in some instances like on BSC
+    // we check first that gasPrice variable is actually set, and we check that it is greater than zero
+    else if (tx.gasPrice !== undefined && tx.gasPrice !== null && tx.gasPrice!.gt(ZERO)) {
+      // if current network gas pricing is null, then this means it's the first time that gas price data is being set
+      if (this.gasPrice.gasPrice === null) {
+        this.gasPrice.gasPrice = tx.gasPrice!;
+      }
+      // otherwise we already have gas price data set, we just add new value to it and divide by two to get the floating average
+      else {
+        this.gasPrice.gasPrice = this.gasPrice.gasPrice!.add(tx.gasPrice!).div(TWO);
+      }
+    }
+    if (network === networks['localhost' as NetworkKeys].key || network === networks['localhost2' as NetworkKeys].key) {
+      this.gasPrice.nextBlockFee = ZERO;
+      this.gasPrice.maxFeePerGas = ZERO;
+      this.gasPrice.nextPriorityFee = ZERO;
+      this.gasPrice.gasPrice = ZERO;
     }
   }
 

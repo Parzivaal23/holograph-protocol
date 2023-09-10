@@ -65,9 +65,79 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
       });
       hre.deployments.log('Deployed a "CxipERC721Proxy" empty contract for block explorer verification purposes.');
     }
+
+    const holographDropERC721Proxy: Contract | null = await hre.ethers.getContractOrNull(
+      'HolographDropERC721Proxy',
+      deployer
+    );
+    if (holographDropERC721Proxy == null) {
+      await hre.deployments.deploy('HolographDropERC721Proxy', {
+        ...(await txParams({
+          hre,
+          from: deployer,
+          to: '0x0000000000000000000000000000000000000000',
+          gasLimit: await hre.ethers.provider.estimateGas(
+            (await hre.ethers.getContractFactory('HolographDropERC721Proxy')).getDeployTransaction()
+          ),
+        })),
+        args: [],
+        log: true,
+        waitConfirmations: 1,
+      });
+      hre.deployments.log(
+        'Deployed a "HolographDropERC721Proxy" empty contract for block explorer verification purposes.'
+      );
+    }
+
+    const holographUtilityToken: Contract | null = await hre.ethers.getContractOrNull(
+      'HolographUtilityToken',
+      deployer
+    );
+    if (holographUtilityToken == null) {
+      await hre.deployments.deploy('HolographUtilityToken', {
+        ...(await txParams({
+          hre,
+          from: deployer,
+          to: '0x0000000000000000000000000000000000000000',
+          gasLimit: await hre.ethers.provider.estimateGas(
+            (await hre.ethers.getContractFactory('HolographUtilityToken')).getDeployTransaction()
+          ),
+        })),
+        args: [],
+        log: true,
+        waitConfirmations: 1,
+      });
+      hre.deployments.log(
+        'Deployed a "HolographUtilityToken" empty contract for block explorer verification purposes.'
+      );
+    }
+
+    const hTokenProxy: Contract | null = await hre.ethers.getContractOrNull('hTokenProxy', deployer);
+    if (hTokenProxy == null) {
+      await hre.deployments.deploy('hTokenProxy', {
+        ...(await txParams({
+          hre,
+          from: deployer,
+          to: '0x0000000000000000000000000000000000000000',
+          gasLimit: await hre.ethers.provider.estimateGas(
+            (await hre.ethers.getContractFactory('hTokenProxy')).getDeployTransaction()
+          ),
+        })),
+        args: [],
+        log: true,
+        waitConfirmations: 1,
+      });
+      hre.deployments.log('Deployed a "hTokenProxy" empty contract for block explorer verification purposes.');
+    }
   }
 };
 
 export default func;
-func.tags = ['Holographer4verify', 'CxipERC721Proxy4verify'];
+func.tags = [
+  'Holographer4verify',
+  'CxipERC721Proxy4verify',
+  'HolographDropERC721Proxy4verify',
+  'HolographUtilityToken4verify',
+  'hToken4verify',
+];
 func.dependencies = [];

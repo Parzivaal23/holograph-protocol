@@ -17,9 +17,11 @@ import {
   remove0x,
   txParams,
 } from '../scripts/utils/helpers';
+import { MultisigAwareTx } from '../scripts/utils/multisig-aware-tx';
 import { HolographERC20Event, ConfigureEvents, AllEventsEnabled } from '../scripts/utils/events';
 import { NetworkType, Network, networks } from '@holographxyz/networks';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
+import { Environment, getEnvironment } from '@holographxyz/environment';
 
 const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
   let { hre, hre2 } = await hreSplit(hre1, global.__companionNetwork);
@@ -43,6 +45,8 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
   const salt = hre.deploymentSalt;
 
   const network = networks[hre.networkName];
+
+  const environment: Environment = getEnvironment();
 
   const chainId = '0x' + network.holographId.toString(16).padStart(8, '0');
 
@@ -80,13 +84,19 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
     // one hundred million tokens minted per network on testnets
     tokenAmount = BigNumber.from('100' + '000' + '000' + '000000000000000000');
     primaryNetwork = networks.ethereumTestnetGoerli;
+    if (environment == Environment.testnet) {
+      tokenAmount = BigNumber.from('10' + '000' + '000' + '000' + '000000000000000000');
+      targetChain = BigNumber.from(networks.ethereumTestnetGoerli.chain);
+      tokenRecipient = networks.ethereumTestnetGoerli.protocolMultisig;
+    }
   } else if (currentNetworkType == NetworkType.mainnet) {
     // ten billion tokens minted on ethereum on mainnet
     tokenAmount = BigNumber.from('10' + '000' + '000' + '000' + '000000000000000000');
     // target chain is restricted to ethereum, to prevent the minting of tokens on other chains
     targetChain = BigNumber.from(networks.ethereum.chain);
     // protocol multisig is the recipient
-    tokenRecipient = networks.ethereum.protocolMultisig;
+    // This is the hardcoded Gnosis Safe address of Holograph Research
+    tokenRecipient = '0xfC40b4233f8Ce60461e1D5FE50b3DDF0C50AE0b4'; //networks.ethereum.protocolMultisig;
     primaryNetwork = networks.ethereum;
   } else {
     throw new Error('cannot identity current NetworkType');
@@ -167,50 +177,70 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
     hre.deployments.log('reusing "HLG" at:', hlgTokenAddress);
   }
 
-  hre.deployments.log('checking Holograph UtilityToken reference');
+  hre.deployments.log('checking HolographUtilityToken reference');
   if ((await holograph.getUtilityToken()) != hlgTokenAddress) {
-    const setHTokenTx = await holograph.setUtilityToken(hlgTokenAddress, {
-      ...(await txParams({
-        hre,
-        from: deployer,
-        to: holograph,
-        data: holograph.populateTransaction.setUtilityToken(hlgTokenAddress),
-      })),
-    });
+    const setHTokenTx = await MultisigAwareTx(
+      hre,
+      deployer,
+      'Holograph',
+      holograph,
+      await holograph.populateTransaction.setUtilityToken(hlgTokenAddress, {
+        ...(await txParams({
+          hre,
+          from: deployer,
+          to: holograph,
+          data: holograph.populateTransaction.setUtilityToken(hlgTokenAddress),
+        })),
+      })
+    );
     await setHTokenTx.wait();
   }
 
   hre.deployments.log('checking HolographRegistry UtilityToken reference');
   if ((await holographRegistry.getUtilityToken()) != hlgTokenAddress) {
-    const setHTokenTx2 = await holographRegistry.setUtilityToken(hlgTokenAddress, {
-      ...(await txParams({
-        hre,
-        from: deployer,
-        to: holographRegistry,
-        data: holographRegistry.populateTransaction.setUtilityToken(hlgTokenAddress),
-      })),
-    });
+    const setHTokenTx2 = await MultisigAwareTx(
+      hre,
+      deployer,
+      'HolographRegistry',
+      holographRegistry,
+      await holographRegistry.populateTransaction.setUtilityToken(hlgTokenAddress, {
+        ...(await txParams({
+          hre,
+          from: deployer,
+          to: holographRegistry,
+          data: holographRegistry.populateTransaction.setUtilityToken(hlgTokenAddress),
+        })),
+      })
+    );
     await setHTokenTx2.wait();
   }
 
   hre.deployments.log('checking HolographOperator HLG balance');
-  if (currentNetworkType == NetworkType.testnet || currentNetworkType == NetworkType.localhost) {
-    const hlgContract = (await hre.ethers.getContract('HolographERC20', deployer)).attach(hlgTokenAddress);
-    if ((await hlgContract.balanceOf(operatorAddress)).isZero()) {
-      hre.deployments.log('HolographOperator has no HLG');
-      const transferTx = await hlgContract.transfer(operatorAddress, BigNumber.from('1000000000000000000000000'), {
-        ...(await txParams({
+  if (currentNetworkType == NetworkType.testnet || currentNetworkType == NetworkType.local) {
+    if (environment != Environment.mainnet && environment != Environment.testnet) {
+      const hlgContract = (await hre.ethers.getContract('HolographERC20', deployer)).attach(hlgTokenAddress);
+      if ((await hlgContract.balanceOf(operatorAddress)).isZero()) {
+        hre.deployments.log('HolographOperator has no HLG');
+        const transferTx = await MultisigAwareTx(
           hre,
-          from: deployer,
-          to: hlgContract,
-          gasLimit: (
-            await hre.ethers.provider.estimateGas(
-              hlgContract.populateTransaction.transfer(operatorAddress, BigNumber.from('1000000000000000000000000'))
-            )
-          ).mul(BigNumber.from('2')),
-        })),
-      });
-      await transferTx.wait();
+          deployer,
+          'HolographUtilityToken',
+          hlgContract,
+          await hlgContract.populateTransaction.transfer(operatorAddress, BigNumber.from('1000000000000000000000000'), {
+            ...(await txParams({
+              hre,
+              from: deployer,
+              to: hlgContract,
+              gasLimit: (
+                await hre.ethers.provider.estimateGas(
+                  hlgContract.populateTransaction.transfer(operatorAddress, BigNumber.from('1000000000000000000000000'))
+                )
+              ).mul(BigNumber.from('2')),
+            })),
+          })
+        );
+        await transferTx.wait();
+      }
     }
   }
 };

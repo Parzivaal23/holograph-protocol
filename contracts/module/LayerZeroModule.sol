@@ -115,6 +115,8 @@ import "../interface/LayerZeroOverrides.sol";
 
 import "../struct/GasParameters.sol";
 
+import "./OVM_GasPriceOracle.sol";
+
 /**
  * @title Holograph LayerZero Module
  * @author https://github.com/holographxyz
@@ -142,6 +144,10 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
    * @dev bytes32(uint256(keccak256('eip1967.Holograph.gasParameters')) - 1)
    */
   bytes32 constant _gasParametersSlot = 0x15eee82a0af3c04e4b65c3842105c973a6b0fb2a68728bf035809e13b38ce8cf;
+  /**
+   * @dev bytes32(uint256(keccak256('eip1967.Holograph.gasParameters')) - 1)
+   */
+  bytes32 constant _optimismGasPriceOracleSlot = 0x46043c284a96474ab4a54c741ea0d0fce54e98eea878b99d4b85808fa6f71a5f;
 
   /**
    * @dev Constructor is left empty and init is used instead
@@ -159,14 +165,16 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
       address bridge,
       address interfaces,
       address operator,
+      address optimismGasPriceOracle,
       uint32[] memory chainIds,
       GasParameters[] memory gasParameters
-    ) = abi.decode(initPayload, (address, address, address, uint32[], GasParameters[]));
+    ) = abi.decode(initPayload, (address, address, address, address, uint32[], GasParameters[]));
     assembly {
       sstore(_adminSlot, origin())
       sstore(_bridgeSlot, bridge)
       sstore(_interfacesSlot, interfaces)
       sstore(_operatorSlot, operator)
+      sstore(_optimismGasPriceOracleSlot, optimismGasPriceOracle)
     }
     require(chainIds.length == gasParameters.length, "HOLOGRAPH: wrong array lengths");
     for (uint256 i = 0; i < chainIds.length; i++) {
@@ -181,9 +189,9 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
    * @dev This function only allows calls from the configured LayerZero endpoint address
    */
   function lzReceive(
-    uint16, /* _srcChainId*/
+    uint16 /* _srcChainId*/,
     bytes calldata _srcAddress,
-    uint64, /* _nonce*/
+    uint64 /* _nonce*/,
     bytes calldata _payload
   ) external payable {
     assembly {
@@ -228,8 +236,8 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
    * @dev Need to add an extra function to get LZ gas amount needed for their internal cross-chain message verification
    */
   function send(
-    uint256, /* gasLimit*/
-    uint256, /* gasPrice*/
+    uint256 /* gasLimit*/,
+    uint256 /* gasPrice*/,
     uint32 toChain,
     address msgSender,
     uint256 msgValue,
@@ -260,15 +268,7 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
     uint256 gasLimit,
     uint256 gasPrice,
     bytes calldata crossChainPayload
-  )
-    external
-    view
-    returns (
-      uint256 hlgFee,
-      uint256 msgFee,
-      uint256 dstGasPrice
-    )
-  {
+  ) external view returns (uint256 hlgFee, uint256 msgFee, uint256 dstGasPrice) {
     uint16 lzDestChain = uint16(
       _interfaces().getChainId(ChainIdType.HOLOGRAPH, uint256(toChain), ChainIdType.LAYERZERO)
     );
@@ -291,16 +291,24 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
     gasLimit = gasLimit + (gasLimit / 10);
     require(gasLimit < gasParameters.maxGasLimit, "HOLOGRAPH: gas limit over max");
     (uint256 nativeFee, ) = lz.estimateFees(lzDestChain, address(this), crossChainPayload, false, adapterParams);
-    hlgFee = ((gasPrice * gasLimit) * dstPriceRatio) / (10**10);
+    hlgFee = ((gasPrice * gasLimit) * dstPriceRatio) / (10 ** 20);
+    /*
+     * @dev toChain is a ChainIdType.HOLOGRAPH, which can be found at https://github.com/holographxyz/networks/blob/main/src/networks.ts
+     *      chainId 7 == optimism
+     *      chainId 4000000015 == optimismTestnetGoerli
+     */
+    if (toChain == uint32(7) || toChain == uint32(4000000015)) {
+      hlgFee += (_optimismGasPriceOracle().getL1Fee(crossChainPayload) * dstPriceRatio) / (10 ** 20);
+    }
     msgFee = nativeFee;
-    dstGasPrice = (dstGasPriceInWei * dstPriceRatio) / (10**10);
+    dstGasPrice = (dstGasPriceInWei * dstPriceRatio) / (10 ** 20);
   }
 
   function getHlgFee(
     uint32 toChain,
     uint256 gasLimit,
     uint256 gasPrice,
-    uint256 payloadLength
+    bytes calldata crossChainPayload
   ) external view returns (uint256 hlgFee) {
     LayerZeroOverrides lz;
     assembly {
@@ -315,17 +323,24 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
     }
     GasParameters memory gasParameters = _gasParameters(toChain);
     require(gasPrice > gasParameters.minGasPrice, "HOLOGRAPH: gas price too low");
-    gasLimit = gasLimit + gasParameters.jobBaseGas + (payloadLength * gasParameters.jobGasPerByte);
+    gasLimit = gasLimit + gasParameters.jobBaseGas + (crossChainPayload.length * gasParameters.jobGasPerByte);
     gasLimit = gasLimit + (gasLimit / 10);
     require(gasLimit < gasParameters.maxGasLimit, "HOLOGRAPH: gas limit over max");
-    return ((gasPrice * gasLimit) * dstPriceRatio) / (10**10);
+    hlgFee = ((gasPrice * gasLimit) * dstPriceRatio) / (10 ** 20);
+    /*
+     * @dev toChain is a ChainIdType.HOLOGRAPH, which can be found at https://github.com/holographxyz/networks/blob/main/src/networks.ts
+     *      chainId 7 == optimism
+     *      chainId 4000000015 == optimismTestnetGoerli
+     */
+    if (toChain == uint32(7) || toChain == uint32(4000000015)) {
+      hlgFee += (_optimismGasPriceOracle().getL1Fee(crossChainPayload) * dstPriceRatio) / (10 ** 20);
+    }
   }
 
-  function _getPricing(LayerZeroOverrides lz, uint16 lzDestChain)
-    private
-    view
-    returns (uint128 dstPriceRatio, uint128 dstGasPriceInWei)
-  {
+  function _getPricing(
+    LayerZeroOverrides lz,
+    uint16 lzDestChain
+  ) private view returns (uint128 dstPriceRatio, uint128 dstGasPriceInWei) {
     return
       LayerZeroOverrides(LayerZeroOverrides(lz.defaultSendLibrary()).getAppConfig(lzDestChain, address(this)).relayer)
         .dstPriceLookup(lzDestChain);
@@ -412,6 +427,26 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
   }
 
   /**
+   * @notice Get the address of the Optimism Gas Price Oracle module
+   * @dev Allows to properly calculate the L1 security fee for Optimism bridge transactions
+   */
+  function getOptimismGasPriceOracle() external view returns (address optimismGasPriceOracle) {
+    assembly {
+      optimismGasPriceOracle := sload(_optimismGasPriceOracleSlot)
+    }
+  }
+
+  /**
+   * @notice Update the Optimism Gas Price Oracle module address
+   * @param optimismGasPriceOracle address of the Optimism Gas Price Oracle smart contract to use
+   */
+  function setOptimismGasPriceOracle(address optimismGasPriceOracle) external onlyAdmin {
+    assembly {
+      sstore(_optimismGasPriceOracleSlot, optimismGasPriceOracle)
+    }
+  }
+
+  /**
    * @dev Internal function used for getting the Holograph Bridge Interface
    */
   function _bridge() private view returns (address bridge) {
@@ -435,6 +470,15 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
   function _operator() private view returns (HolographOperatorInterface operator) {
     assembly {
       operator := sload(_operatorSlot)
+    }
+  }
+
+  /**
+   * @dev Internal function used for getting the Optimism Gas Price Oracle Interface
+   */
+  function _optimismGasPriceOracle() private view returns (OVM_GasPriceOracle optimismGasPriceOracle) {
+    assembly {
+      optimismGasPriceOracle := sload(_optimismGasPriceOracleSlot)
     }
   }
 

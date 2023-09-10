@@ -122,11 +122,7 @@ interface HolographERC721Interface is
 
   function burn(uint256 tokenId) external;
 
-  function safeTransferFrom(
-    address from,
-    address to,
-    uint256 tokenId
-  ) external payable;
+  function safeTransferFrom(address from, address to, uint256 tokenId) external payable;
 
   function setApprovalForAll(address to, bool approved) external;
 
@@ -137,6 +133,8 @@ interface HolographERC721Interface is
   function sourceGetChainPrepend() external view returns (uint256);
 
   function sourceTransfer(address to, uint256 tokenId) external;
+
+  function sourceExternalCall(address target, bytes calldata data) external;
 
   function transfer(address to, uint256 tokenId) external payable;
 

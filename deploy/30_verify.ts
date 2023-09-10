@@ -2,6 +2,7 @@ declare var global: any;
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from '@holographxyz/hardhat-deploy-holographed/types';
 import { NetworkType, networks } from '@holographxyz/networks';
+import { Environment, getEnvironment } from '@holographxyz/environment';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -20,18 +21,57 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     );
   }
 
-  const currentNetworkType: NetworkType = networks[hre.network.name].type;
+  const network = networks[hre.network.name];
+  const environment: Environment = getEnvironment();
+  const currentNetworkType: NetworkType = network.type;
+
+  const definedOracleNames = {
+    avalanche: 'Avalanche',
+    avalancheTestnet: 'AvalancheTestnet',
+    binanceSmartChain: 'BinanceSmartChain',
+    binanceSmartChainTestnet: 'BinanceSmartChainTestnet',
+    ethereum: 'Ethereum',
+    ethereumTestnetGoerli: 'EthereumTestnetGoerli',
+    polygon: 'Polygon',
+    polygonTestnet: 'PolygonTestnet',
+    optimism: 'Optimism',
+    optimismTestnetGoerli: 'OptimismTestnetGoerli',
+    arbitrumNova: 'ArbitrumNova',
+    arbitrumOne: 'ArbitrumOne',
+    arbitrumTestnetGoerli: 'ArbitrumTestnetGoerli',
+    mantle: 'Mantle',
+    mantleTestnet: 'MantleTestnet',
+    base: 'Base',
+    baseTestnetGoerli: 'BaseTestnetGoerli',
+    zora: 'Zora',
+    zoraTestnetGoerli: 'ZoraTestnetGoerli',
+  };
+
+  let targetDropsPriceOracle = 'DummyDropsPriceOracle';
+  if (network.key in definedOracleNames) {
+    targetDropsPriceOracle = 'DropsPriceOracle' + definedOracleNames[network.key];
+  } else {
+    if (environment == Environment.mainnet || (network.key != 'localhost' && network.key != 'hardhat')) {
+      throw new Error('Drops price oracle not created for network yet!');
+    }
+  }
 
   if (currentNetworkType != NetworkType.local) {
     let contracts: string[] = [
+      'HolographUtilityToken',
+      'hToken',
+      'hTokenProxy',
       'Holograph',
       'HolographBridge',
       'HolographBridgeProxy',
       'Holographer',
       'HolographERC20',
       'HolographERC721',
+      'HolographDropERC721',
+      'HolographDropERC721Proxy',
       'HolographFactory',
       'HolographFactoryProxy',
+      'HolographGeneric',
       'HolographGenesis',
       'HolographOperator',
       'HolographOperatorProxy',
@@ -45,6 +85,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       'CxipERC721Proxy',
       'Faucet',
       'LayerZeroModule',
+      'LayerZeroModuleProxy',
+      'EditionsMetadataRenderer',
+      'EditionsMetadataRendererProxy',
+      'OVM_GasPriceOracle',
+      'DropsPriceOracleProxy',
+      targetDropsPriceOracle,
     ];
     for (let i: number = 0, l: number = contracts.length; i < l; i++) {
       let contract: string = contracts[i];

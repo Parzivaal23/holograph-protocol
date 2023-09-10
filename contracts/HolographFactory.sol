@@ -107,12 +107,17 @@ import "./abstract/Initializable.sol";
 import "./enforcer/Holographer.sol";
 
 import "./interface/Holographable.sol";
+import "./interface/HolographBridgeInterface.sol";
 import "./interface/HolographFactoryInterface.sol";
+import "./interface/HolographInterface.sol";
 import "./interface/HolographRegistryInterface.sol";
 import "./interface/InitializableInterface.sol";
 
+import "./struct/BridgeSettings.sol";
 import "./struct/DeploymentConfig.sol";
 import "./struct/Verification.sol";
+
+import "./library/Strings.sol";
 
 /**
  * @title Holograph Factory
@@ -157,10 +162,7 @@ contract HolographFactory is Admin, Initializable, Holographable, HolographFacto
    * @dev This function directly forwards the calldata to the deployHolographableContract function
    *      It is used to allow for Holograph Bridge to make cross-chain deployments
    */
-  function bridgeIn(
-    uint32, /* fromChain*/
-    bytes calldata payload
-  ) external returns (bytes4) {
+  function bridgeIn(uint32 /* fromChain*/, bytes calldata payload) external returns (bytes4) {
     (DeploymentConfig memory config, Verification memory signature, address signer) = abi.decode(
       payload,
       (DeploymentConfig, Verification, address)
@@ -175,11 +177,39 @@ contract HolographFactory is Admin, Initializable, Holographable, HolographFacto
    *      It is used to allow for Holograph Bridge to make cross-chain deployments
    */
   function bridgeOut(
-    uint32, /* toChain*/
-    address, /* sender*/
+    uint32 /* toChain*/,
+    address /* sender*/,
     bytes calldata payload
   ) external pure returns (bytes4 selector, bytes memory data) {
     return (Holographable.bridgeOut.selector, payload);
+  }
+
+  function deployHolographableContractMultiChain(
+    DeploymentConfig memory config,
+    Verification memory signature,
+    address signer,
+    bool deployOnCurrentChain,
+    BridgeSettings[] memory bridgeSettings
+  ) external payable {
+    if (deployOnCurrentChain) {
+      deployHolographableContract(config, signature, signer);
+    }
+    bytes memory payload = abi.encode(config, signature, signer);
+    HolographInterface holograph;
+    assembly {
+      holograph := sload(_holographSlot)
+    }
+    HolographBridgeInterface bridge = HolographBridgeInterface(holograph.getBridge());
+    uint256 l = bridgeSettings.length;
+    for (uint256 i = 0; i < l; i++) {
+      bridge.bridgeOutRequest{value: bridgeSettings[i].value}(
+        bridgeSettings[i].toChain,
+        address(this),
+        bridgeSettings[i].gasLimit,
+        bridgeSettings[i].gasPrice,
+        payload
+      );
+    }
   }
 
   /**
@@ -193,7 +223,7 @@ contract HolographFactory is Admin, Initializable, Holographable, HolographFacto
     DeploymentConfig memory config,
     Verification memory signature,
     address signer
-  ) external {
+  ) public {
     address registry;
     address holograph;
     assembly {
@@ -317,13 +347,7 @@ contract HolographFactory is Admin, Initializable, Holographable, HolographFacto
   /**
    * @dev Internal function used for verifying a signature
    */
-  function _verifySigner(
-    bytes32 r,
-    bytes32 s,
-    uint8 v,
-    bytes32 hash,
-    address signer
-  ) private pure returns (bool) {
+  function _verifySigner(bytes32 r, bytes32 s, uint8 v, bytes32 hash, address signer) private pure returns (bool) {
     if (v < 27) {
       v += 27;
     }
@@ -350,6 +374,15 @@ contract HolographFactory is Admin, Initializable, Holographable, HolographFacto
      */
     return (signer != address(0) &&
       (ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)), v, r, s) == signer ||
+        (
+          ecrecover(
+            keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n66", Strings.toHexString(uint256(hash), 32))),
+            v,
+            r,
+            s
+          )
+        ) ==
+        signer ||
         ecrecover(hash, v, r, s) == signer));
   }
 

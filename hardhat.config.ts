@@ -1,11 +1,16 @@
 declare var global: any;
 import fs from 'fs';
+import path from 'path';
 import '@typechain/hardhat';
 import 'hardhat-gas-reporter';
 import '@holographxyz/hardhat-deploy-holographed';
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-etherscan';
+import '@nomicfoundation/hardhat-foundry';
+import { subtask } from 'hardhat/config';
+import { TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS } from 'hardhat/builtin-tasks/task-names';
+
 import { types, task, HardhatUserConfig } from 'hardhat/config';
 import '@holographxyz/hardhat-holograph-contract-builder';
 import { BigNumber } from 'ethers';
@@ -13,9 +18,41 @@ import { Environment, getEnvironment } from '@holographxyz/environment';
 import { NetworkType, Network, Networks, networks } from '@holographxyz/networks';
 import { GasService } from './scripts/utils/gas-service';
 import dotenv from 'dotenv';
+//import * as tenderly from '@tenderly/hardhat-tenderly';
+import { network } from 'hardhat';
 dotenv.config();
 
-function hex2buffer(input: string): Uin8Array {
+let tenderlyNetwork = {};
+let tenderlyConfig = {};
+/*
+if (process.env.USE_TENDERLY && process.env.USE_TENDERLY == 'true') {
+  tenderly.setup();
+  tenderlyNetwork = {
+    tenderly: {
+      chainId: 5,
+      url: 'https://rpc.tenderly.co/fork/<fork-chain-id>',
+    },
+  };
+  tenderlyConfig = {
+    tenderly: {
+      project: process.env.TENDERLY_PROJECT,
+      username: process.env.TENDERLY_USERNAME,
+      privateVerification: false,
+      forkNetwork: '<fork-chain-id>',
+    },
+  };
+}
+*/
+
+function getRemappings() {
+  return fs
+    .readFileSync('remappings.txt', 'utf8')
+    .split('\n')
+    .filter(Boolean) // remove empty lines
+    .map((line) => line.trim().split('='));
+}
+
+function hex2buffer(input: string): Uint8Array {
   input = input.toLowerCase().trim();
   if (input.startsWith('0x')) {
     input = input.substring(2).trim();
@@ -46,7 +83,7 @@ if (
   global.__superColdStorage = {
     address: process.env.SUPER_COLD_STORAGE_ADDRESS,
     domain: process.env.SUPER_COLD_STORAGE_DOMAIN,
-    authorization: process.env.SUPER_COLD_STORAGE_AUTHORIZATION, //String.fromCharCode.apply(null, hex2buffer(process.env.SUPER_COLD_STORAGE_AUTHORIZATION)),
+    authorization: process.env.SUPER_COLD_STORAGE_AUTHORIZATION, // String.fromCharCode.apply(null, hex2buffer(process.env.SUPER_COLD_STORAGE_AUTHORIZATION)),
     ca: String.fromCharCode.apply(null, hex2buffer(process.env.SUPER_COLD_STORAGE_CA)),
   };
 }
@@ -59,6 +96,31 @@ const setDeployerKey = function (fallbackKey: string | number): string | number 
   }
 };
 
+const dynamicNetworks = function (skipLocalhost: boolean = true): unknown {
+  let output = {};
+  for (const name of Object.keys(networks)) {
+    if (name != 'hardhat' && (!skipLocalhost || (skipLocalhost && name != 'localhost' && name != 'localhost2'))) {
+      let envKey = name.replace(/([A-Z]{1})/g, '_$1').toUpperCase();
+      output[name] = {
+        url: process.env[envKey + '_RPC_URL'] || networks[name].rpc,
+        chainId: networks[name].chain,
+        accounts: [process.env[envKey + '_PRIVATE_KEY'] || DEPLOYER],
+      };
+    }
+  }
+  return output;
+};
+
+const dynamicExternalDeployments = function (): unknown {
+  let output = {};
+  for (const name of Object.keys(networks)) {
+    if (name != 'hardhat') {
+      output[name] = ['node_modules/@holographxyz/holograph-genesis/deployments/' + name];
+    }
+  }
+  return output;
+};
+
 const AVALANCHE_PRIVATE_KEY = process.env.AVALANCHE_PRIVATE_KEY || DEPLOYER;
 const AVALANCHE_TESTNET_PRIVATE_KEY = process.env.AVALANCHE_TESTNET_PRIVATE_KEY || DEPLOYER;
 const BINANCE_SMART_CHAIN_PRIVATE_KEY = process.env.BINANCE_SMART_CHAIN_PRIVATE_KEY || DEPLOYER;
@@ -68,10 +130,6 @@ const ETHEREUM_TESTNET_GOERLI_PRIVATE_KEY = process.env.ETHEREUM_TESTNET_GOERLI_
 const ETHEREUM_TESTNET_RINKEBY_PRIVATE_KEY = process.env.ETHEREUM_TESTNET_RINKEBY_PRIVATE_KEY || DEPLOYER;
 const POLYGON_PRIVATE_KEY = process.env.POLYGON_PRIVATE_KEY || DEPLOYER;
 const POLYGON_TESTNET_PRIVATE_KEY = process.env.POLYGON_TESTNET_PRIVATE_KEY || DEPLOYER;
-
-const ETHERSCAN_API_KEY: string = process.env.ETHERSCAN_API_KEY || '';
-const POLYGONSCAN_API_KEY: string = process.env.POLYGONSCAN_API_KEY || '';
-const AVALANCHE_API_KEY: string = process.env.AVALANCHE_API_KEY || '';
 
 const selectDeploymentSalt = (): number => {
   let salt;
@@ -112,8 +170,23 @@ const DEPLOYMENT_PATH = process.env.DEPLOYMENT_PATH || 'deployments';
 
 global.__DEPLOYMENT_SALT = '0x' + DEPLOYMENT_SALT.toString(16).padStart(64, '0');
 
+// This subtask runs before the actual hardhat compile task
+// THis is used to filter out the contracts/drops folder from compilation since those are handled by foundry
+// TODO: Disabled for now
+// subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(async (_, __, runSuper) => {
+//   const paths = await runSuper();
+//   return paths.filter((p) => !p.includes('contracts/drops/'));
+// });
+
 // this task runs before the actual hardhat deploy task
 task('deploy', 'Deploy contracts').setAction(async (args, hre, runSuper) => {
+  let network: Network = networks[hre.network.name];
+  if (network.type === NetworkType.localhost) {
+    process.env.GAS_LIMIT_MULTIPLIER = '10000';
+    process.env.GAS_PRICE_MULTIPLIER = '10000';
+    process.env.MAXIMUM_GAS_PRICE = '0';
+    process.env.MAXIMUM_GAS_BRIBE = '0';
+  }
   // set gas parameters
   global.__gasLimitMultiplier = BigNumber.from(process.env.GAS_LIMIT_MULTIPLIER || '10000');
   global.__gasPriceMultiplier = BigNumber.from(process.env.GAS_PRICE_MULTIPLIER || '10000');
@@ -127,6 +200,46 @@ task('deploy', 'Deploy contracts').setAction(async (args, hre, runSuper) => {
   process.stdout.write('\nReady to start deployments\n');
   // run the actual hardhat deploy task
   return runSuper(args);
+});
+
+task('deploymentsPrettier', 'Adds EOF new line to prevent prettier to change files').setAction(async (args) => {
+  if (!fs.existsSync('./deployments')) {
+    throw new Error('The directory "deployments" was not found.');
+  }
+
+  function getAllFiles(dirPath: string, arrayOfFiles: string[]) {
+    const files = fs.readdirSync(dirPath);
+
+    arrayOfFiles = arrayOfFiles || [];
+
+    for (const file of files) {
+      if (fs.statSync(dirPath + '/' + file).isDirectory()) {
+        arrayOfFiles = getAllFiles(dirPath + '/' + file, arrayOfFiles);
+      } else {
+        arrayOfFiles.push(path.join(__dirname, dirPath, '/', file));
+      }
+    }
+
+    return arrayOfFiles;
+  }
+
+  function checkIfEoFIsEmpty(fileContent: string) {
+    const matches = fileContent.match(/\r?\n$/);
+    if (matches) {
+      return true;
+    }
+    return false;
+  }
+
+  const files = getAllFiles('./deployments', []);
+  for (const file of files) {
+    if (file.endsWith('.json')) {
+      const fileContents = fs.readFileSync(file, 'utf8');
+      if (!checkIfEoFIsEmpty(fileContents)) {
+        fs.appendFileSync(file, '\n');
+      }
+    }
+  }
 });
 
 task('abi', 'Create standalone ABI files for all smart contracts')
@@ -158,7 +271,7 @@ task('abi', 'Create standalone ABI files for all smart contracts')
               console.log(' -- exporting', file.split('.')[0], 'ABI');
             }
             const data = JSON.parse(fs.readFileSync(sourceDir + '/' + file, 'utf8')).abi;
-            fs.writeFileSync(deployDir + '/' + file, JSON.stringify(data, undefined, 2));
+            fs.writeFileSync(deployDir + '/' + file, JSON.stringify(data, undefined, 2) + '\n');
           }
         }
       }
@@ -179,38 +292,29 @@ task('abi', 'Create standalone ABI files for all smart contracts')
  * @type import('hardhat/config').HardhatUserConfig
  */
 const config: HardhatUserConfig = {
+  preprocess: {
+    eachLine: (hre) => ({
+      transform: (line: string) => {
+        if (line.match(/^\s*import /i)) {
+          for (const [from, to] of getRemappings()) {
+            if (line.includes(from)) {
+              line = line.replace(from, to);
+              break;
+            }
+          }
+        }
+        return line;
+      },
+    }),
+  },
   paths: {
+    sources: 'contracts',
+    cache: 'cache_hardhat',
     deployments: DEPLOYMENT_PATH + '/' + currentEnvironment,
   },
   defaultNetwork: 'localhost',
   external: {
-    deployments: {
-      arbitrum: [DEPLOYMENT_PATH + '/external/arbitrum'],
-      arbitrumTestnetRinkeby: [DEPLOYMENT_PATH + '/external/arbitrumTestnetRinkeby'],
-      aurora: [DEPLOYMENT_PATH + '/external/aurora'],
-      auroraTestnet: [DEPLOYMENT_PATH + '/external/auroraTestnet'],
-      avalanche: [DEPLOYMENT_PATH + '/external/avalanche'],
-      avalancheTestnet: [DEPLOYMENT_PATH + '/external/avalancheTestnet'],
-      binanceSmartChain: [DEPLOYMENT_PATH + '/external/binanceSmartChain'],
-      binanceSmartChainTestnet: [DEPLOYMENT_PATH + '/external/binanceSmartChainTestnet'],
-      cronos: [DEPLOYMENT_PATH + '/external/cronos'],
-      cronosTestnet: [DEPLOYMENT_PATH + '/external/cronosTestnet'],
-      ethereum: [DEPLOYMENT_PATH + '/external/ethereum'],
-      ethereumTestnetGoerli: [DEPLOYMENT_PATH + '/external/ethereumTestnetGoerli'],
-      ethereumTestnetKovan: [DEPLOYMENT_PATH + '/external/ethereumTestnetKovan'],
-      ethereumTestnetRinkeby: [DEPLOYMENT_PATH + '/external/ethereumTestnetRinkeby'],
-      ethereumTestnetRopsten: [DEPLOYMENT_PATH + '/external/ethereumTestnetRopsten'],
-      fantom: [DEPLOYMENT_PATH + '/external/fantom'],
-      fantomTestnet: [DEPLOYMENT_PATH + '/external/fantomTestnet'],
-      gnosis: [DEPLOYMENT_PATH + '/external/gnosis'],
-      gnosisTestnetSokol: [DEPLOYMENT_PATH + '/external/gnosisTestnetSokol'],
-      localhost: [DEPLOYMENT_PATH + '/external/localhost'],
-      localhost2: [DEPLOYMENT_PATH + '/external/localhost2'],
-      optimism: [DEPLOYMENT_PATH + '/external/optimism'],
-      optimismTestnetKovan: [DEPLOYMENT_PATH + '/external/optimismTestnetKovan'],
-      polygon: [DEPLOYMENT_PATH + '/external/polygon'],
-      polygonTestnet: [DEPLOYMENT_PATH + '/external/polygonTestnet'],
-    },
+    deployments: dynamicExternalDeployments(),
   },
   networks: {
     localhost: {
@@ -245,54 +349,8 @@ const config: HardhatUserConfig = {
       },
       saveDeployments: false,
     },
-    avalanche: {
-      url: networks.avalanche.rpc,
-      chainId: networks.avalanche.chain,
-      accounts: [AVALANCHE_PRIVATE_KEY],
-    },
-    avalancheTestnet: {
-      url: networks.avalancheTestnet.rpc,
-      chainId: networks.avalancheTestnet.chain,
-      accounts: [AVALANCHE_TESTNET_PRIVATE_KEY],
-    },
-    binanceSmartChain: {
-      url: networks.binanceSmartChain.rpc,
-      chainId: networks.binanceSmartChain.chain,
-      accounts: [BINANCE_SMART_CHAIN_PRIVATE_KEY],
-    },
-    binanceSmartChainTestnet: {
-      url: networks.binanceSmartChainTestnet.rpc,
-      chainId: networks.binanceSmartChainTestnet.chain,
-      accounts: [BINANCE_SMART_CHAIN_TESTNET_PRIVATE_KEY],
-    },
-    ethereum: {
-      url: networks.ethereum.rpc,
-      chainId: networks.ethereum.chain,
-      accounts: [ETHEREUM_PRIVATE_KEY],
-    },
-    ethereumTestnetRinkeby: {
-      url: networks.ethereumTestnetRinkeby.rpc,
-      chainId: networks.ethereumTestnetRinkeby.chain,
-      accounts: [ETHEREUM_TESTNET_RINKEBY_PRIVATE_KEY],
-    },
-    ethereumTestnetGoerli: {
-      url: networks.ethereumTestnetGoerli.rpc,
-      chainId: networks.ethereumTestnetGoerli.chain,
-      accounts: [ETHEREUM_TESTNET_GOERLI_PRIVATE_KEY],
-    },
-    polygon: {
-      url: networks.polygon.rpc,
-      chainId: networks.polygon.chain,
-      accounts: [POLYGON_PRIVATE_KEY],
-    },
-    polygonTestnet: {
-      url: networks.polygonTestnet.rpc,
-      chainId: networks.polygonTestnet.chain,
-      accounts: [POLYGON_TESTNET_PRIVATE_KEY],
-    },
-    coverage: {
-      url: 'http://127.0.0.1:8555',
-    },
+    ...dynamicNetworks(),
+    ...tenderlyNetwork,
   },
   namedAccounts: {
     deployer: setDeployerKey(0),
@@ -322,23 +380,95 @@ const config: HardhatUserConfig = {
     currency: 'USD',
     coinmarketcap: process.env.COINMARKETCAP_API_KEY || '',
     token: 'ETH',
-    gasPriceApi: 'https://api.binanceSmartChainscan.com/api?module=proxy&action=ethereumTestnet_gasPrice',
+    gasPriceApi: process.env.PRIVACY_MODE
+      ? ''
+      : 'https://api.binanceSmartChainscan.com/api?module=proxy&action=ethereumTestnet_gasPrice',
   },
   etherscan: {
     apiKey: {
-      mainnet: ETHERSCAN_API_KEY,
-      rinkeby: ETHERSCAN_API_KEY,
-      goerli: ETHERSCAN_API_KEY,
-      polygon: POLYGONSCAN_API_KEY,
-      polygonMumbai: POLYGONSCAN_API_KEY,
-      avalanche: AVALANCHE_API_KEY,
-      avalancheFujiTestnet: AVALANCHE_API_KEY,
+      mainnet: process.env.ETHERSCAN_API_KEY || '',
+      goerli: process.env.ETHERSCAN_API_KEY || '',
+      avalanche: process.env.SNOWTRACE_API_KEY || '',
+      avalancheFujiTestnet: process.env.SNOWTRACE_API_KEY || '',
+      polygon: process.env.POLYGONSCAN_API_KEY || '',
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY || '',
+      bsc: process.env.BSCSCAN_API_KEY || '',
+      bscTestnet: process.env.BSCSCAN_API_KEY || '',
+      optimisticEthereum: process.env.OPTIMISTIC_API_KEY || process.env.OPTIMISM_API_KEY || '',
+      optimisticGoerli: process.env.OPTIMISTIC_API_KEY || process.env.OPTIMISM_API_KEY || '',
+      arbitrumOne: process.env.ARBISCAN_API_KEY || '',
+      arbitrumGoerli: process.env.ARBISCAN_API_KEY || '',
+      arbitrumNova: process.env.ARBISCAN_NOVA_API_KEY || '',
+      mantle: process.env.MANTLE_API_KEY || '',
+      mantleTestnet: process.env.MANTLE_API_KEY || '',
+      base: process.env.BASESCAN_API_KEY || '',
+      baseTestnetGoerli: process.env.BASESCAN_API_KEY || '',
+      zora: process.env.ZORAENERGY_API_KEY || '',
+      zoraTestnetGoerli: process.env.ZORAENERGY_API_KEY || '',
     },
+    customChains: [
+      {
+        network: 'arbitrumNova',
+        chainId: 42170,
+        urls: {
+          apiURL: 'https://api-nova.arbiscan.io/api',
+          browserURL: 'https://nova.arbiscan.io',
+        },
+      },
+      {
+        network: 'mantle',
+        chainId: 5000,
+        urls: {
+          apiURL: 'https://explorer.mantle.xyz/api',
+          browserURL: 'https://explorer.mantle.xyz',
+        },
+      },
+      {
+        network: 'mantleTestnet',
+        chainId: 5001,
+        urls: {
+          apiURL: 'https://explorer.testnet.mantle.xyz/api',
+          browserURL: 'https://explorer.testnet.mantle.xyz',
+        },
+      },
+      {
+        network: 'base',
+        chainId: 8453,
+        urls: {
+          apiURL: 'https://api.basescan.org/api',
+          browserURL: 'https://basescan.org',
+        },
+      },
+      {
+        network: 'baseTestnetGoerli',
+        chainId: 84531,
+        urls: {
+          apiURL: 'https://api-goerli.basescan.org/api',
+          browserURL: 'https://goerli.basescan.org',
+        },
+      },
+    ],
   },
   hardhatHolographContractBuilder: {
     runOnCompile: true,
     verbose: false,
   },
+  ...tenderlyConfig,
 };
+
+// Allow hardhat to use short network names
+function mapNetworkKeysByShortKey(networks: Networks) {
+  for (let key in networks) {
+    // Not all networks in @holographxyz/networks are supported by hardhat
+    if (key in config.networks!) {
+      let shortKey = networks[key]!.shortKey;
+      config.networks![shortKey] = config.networks![key];
+    }
+  }
+
+  return config;
+}
+
+mapNetworkKeysByShortKey(networks as Networks);
 
 export default config;

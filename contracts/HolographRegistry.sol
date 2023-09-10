@@ -187,6 +187,12 @@ contract HolographRegistry is Admin, Initializable, HolographRegistryInterface {
     return _holographedContractsHashMap[hash] != address(0);
   }
 
+  function holographableEvent(bytes calldata payload) external {
+    if (_holographedContracts[msg.sender]) {
+      emit HolographableContractEvent(msg.sender, payload);
+    }
+  }
+
   /**
    * @dev Allows to reference a deployed smart contract, and use it's code as reference inside of Holographers
    */
@@ -196,7 +202,10 @@ contract HolographRegistry is Admin, Initializable, HolographRegistryInterface {
       contractType := extcodehash(contractAddress)
     }
     require(
-      (contractType != 0x0 && contractType != 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470),
+      (// check that bytecode is not empty
+      contractType != 0x0 &&
+        // check that hash is not for empty bytes
+        contractType != 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470),
       "HOLOGRAPH: empty contract"
     );
     require(_contractTypeAddresses[contractType] == address(0), "HOLOGRAPH: contract already set");

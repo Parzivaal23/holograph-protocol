@@ -13,6 +13,7 @@ export enum HolographERC20Event {
   beforeSafeTransfer = 12,
   afterTransfer = 13,
   beforeTransfer = 14,
+  onAllowance = 15,
 }
 
 export enum HolographERC721Event {
@@ -32,6 +33,8 @@ export enum HolographERC721Event {
   beforeTransfer = 14,
   beforeOnERC721Received = 15,
   afterOnERC721Received = 16,
+  onIsApprovedForAll = 17,
+  customContractURI = 18,
 }
 
 export enum HolographERC1155Event {}
