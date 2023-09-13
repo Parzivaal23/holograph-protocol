@@ -101,11 +101,23 @@
 
 pragma solidity 0.8.13;
 
-enum ChainIdType {
-  UNDEFINED, //  0
-  EVM, //  1
-  HOLOGRAPH, //  2
-  LAYERZERO, //  3
-  HYPERLANE, //   4
-  CHAINLINK //   5
+interface ChainlinkModuleInterface {
+  function chainlinkReceive(
+    uint16 _srcChainId,
+    bytes calldata _srcAddress,
+    uint64 _nonce,
+    bytes calldata _payload
+  ) external payable;
+
+  function getInterfaces() external view returns (address interfaces);
+
+  function setInterfaces(address interfaces) external;
+
+  function getChainlinkEndpoint() external view returns (address lZEndpoint);
+
+  function setChainlinkEndpoint(address lZEndpoint) external;
+
+  function getOperator() external view returns (address operator);
+
+  function setOperator(address operator) external;
 }
