@@ -25,6 +25,8 @@ import {
   HolographRegistryProxy,
   HolographTreasury,
   HolographTreasuryProxy,
+  HolographReserve,
+  HolographReserveProxy,
   HToken,
   HolographInterfaces,
   MockERC721Receiver,
@@ -216,6 +218,32 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
     )
   );
   hre.deployments.log('the future "HolographTreasuryProxy" address is', futureTreasuryProxyAddress);
+
+  // Holograph Reserve
+  const futureReserveAddress = await genesisDeriveFutureAddress(
+    hre,
+    salt,
+    'HolographReserve',
+    generateInitCode(['address', 'address', 'address', 'address'], [zeroAddress, zeroAddress, zeroAddress, zeroAddress])
+  );
+  hre.deployments.log('the future "HolographReserve" address is', futureReserveAddress);
+
+  const futureReserveProxyAddress = await genesisDeriveFutureAddress(
+    hre,
+    salt,
+    'HolographReserveProxy',
+    generateInitCode(
+      ['address', 'bytes'],
+      [
+        zeroAddress,
+        generateInitCode(
+          ['address', 'address', 'address', 'address'],
+          [zeroAddress, zeroAddress, zeroAddress, zeroAddress]
+        ),
+      ]
+    )
+  );
+  hre.deployments.log('the future "HolographReserveProxy" address is', futureReserveProxyAddress);
 
   const futureHolographInterfacesAddress = await genesisDeriveFutureAddress(
     hre,
@@ -1144,6 +1172,130 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
     }
   }
 
+  // HolographReserve
+  let reserveDeployedCode: string = await hre.provider.send('eth_getCode', [futureReserveAddress, 'latest']);
+  if (reserveDeployedCode == '0x' || reserveDeployedCode == '') {
+    hre.deployments.log('"HolographReserve" bytecode not found, need to deploy"');
+    let holographReserve = await genesisDeployHelper(
+      hre,
+      salt,
+      'HolographReserve',
+      generateInitCode(
+        ['address', 'address', 'address', 'address'],
+        [zeroAddress, zeroAddress, zeroAddress, zeroAddress]
+      ),
+      futureReserveAddress
+    );
+  } else {
+    hre.deployments.log('"HolographReserve" is already deployed.');
+  }
+
+  // HolographReserveProxy
+  let reserveProxyDeployedCode: string = await hre.provider.send('eth_getCode', [futureReserveProxyAddress, 'latest']);
+  if (reserveProxyDeployedCode == '0x' || reserveProxyDeployedCode == '') {
+    hre.deployments.log('"HolographReserveProxy" bytecode not found, need to deploy"');
+    let holographReserveProxy = await genesisDeployHelper(
+      hre,
+      salt,
+      'HolographReserveProxy',
+      generateInitCode(
+        ['address', 'bytes'],
+        [
+          futureReserveAddress,
+          generateInitCode(
+            ['address', 'address', 'address', 'address'],
+            [futureBridgeProxyAddress, futureHolographAddress, futureOperatorProxyAddress, futureRegistryProxyAddress]
+          ),
+        ]
+      ),
+      futureReserveProxyAddress
+    );
+  } else {
+    hre.deployments.log('"HolographReserveProxy" is already deployed. Checking configs.');
+    let holographReserveProxy = (await hre.ethers.getContractAt(
+      'HolographReserveProxy',
+      futureReserveProxyAddress,
+      deployer
+    )) as HolographReserveProxy;
+    let holographReserve = (await hre.ethers.getContractAt(
+      'HolographReserve',
+      futureReserveProxyAddress,
+      deployer
+    )) as HolographReserve;
+    if ((await holographReserveProxy.getReserve()) != futureReserveAddress) {
+      hre.deployments.log('Updating Reserve reference');
+      let tx = await MultisigAwareTx(
+        hre,
+        deployer,
+        'HolographReserveProxy',
+        holographReserveProxy,
+        await holographReserveProxy.populateTransaction.setReserve(futureReserveAddress, {
+          ...(await txParams({
+            hre,
+            from: deployer,
+            to: holographReserveProxy,
+            data: holographReserveProxy.populateTransaction.setReserve(futureReserveAddress),
+          })),
+        })
+      );
+      await tx.wait();
+    }
+    if ((await holographReserve.getBridge()) != futureBridgeProxyAddress) {
+      hre.deployments.log('Updating Bridge reference');
+      let tx = await MultisigAwareTx(
+        hre,
+        deployer,
+        'HolographReserve',
+        holographReserve,
+        await holographReserve.populateTransaction.setBridge(futureBridgeProxyAddress, {
+          ...(await txParams({
+            hre,
+            from: deployer,
+            to: holographReserve,
+            data: holographReserve.populateTransaction.setBridge(futureBridgeProxyAddress),
+          })),
+        })
+      );
+      await tx.wait();
+    }
+    if ((await holographReserve.getOperator()) != futureOperatorProxyAddress) {
+      hre.deployments.log('Updating Operator reference');
+      let tx = await MultisigAwareTx(
+        hre,
+        deployer,
+        'HolographReserve',
+        holographReserve,
+        await holographReserve.populateTransaction.setOperator(futureOperatorProxyAddress, {
+          ...(await txParams({
+            hre,
+            from: deployer,
+            to: holographReserve,
+            data: holographReserve.populateTransaction.setOperator(futureOperatorProxyAddress),
+          })),
+        })
+      );
+      await tx.wait();
+    }
+    if ((await holographReserve.getRegistry()) != futureRegistryProxyAddress) {
+      hre.deployments.log('Updating Registry reference');
+      let tx = await MultisigAwareTx(
+        hre,
+        deployer,
+        'HolographReserve',
+        holographReserve,
+        await holographReserve.populateTransaction.setRegistry(futureRegistryProxyAddress, {
+          ...(await txParams({
+            hre,
+            from: deployer,
+            to: holographReserve,
+            data: holographReserve.populateTransaction.setRegistry(futureRegistryProxyAddress),
+          })),
+        })
+      );
+      await tx.wait();
+    }
+  }
+
   // HolographInterfaces
   let interfacesDeployedCode: string = await hre.provider.send('eth_getCode', [
     futureHolographInterfacesAddress,
@@ -1195,6 +1347,8 @@ func.tags = [
   'HolographRegistryProxy',
   'HolographTreasury',
   'HolographTreasuryProxy',
+  'HolographReserve',
+  'HolographReserveProxy',
   'HolographInterfaces',
   'HolographRoyalties',
 ];

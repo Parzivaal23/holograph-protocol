@@ -51,6 +51,7 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
       'HolographOperatorProxy',
       'HolographRegistryProxy',
       'HolographTreasuryProxy',
+      'HolographReserveProxy',
       'LayerZeroModule',
     ];
 
