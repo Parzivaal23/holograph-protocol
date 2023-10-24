@@ -778,7 +778,6 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
     [
       [
         zeroAddress, // holographERC721TransferHelper
-        zeroAddress, // marketFilterAddress (opensea)
         deployer.address, // initialOwner
         deployer.address, // fundsRecipient
         0, // 1000 editions

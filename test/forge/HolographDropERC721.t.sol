@@ -18,7 +18,6 @@ import {Constants} from "./utils/Constants.sol";
 import {Utils} from "./utils/Utils.sol";
 import {HolographerInterface} from "../../contracts/interface/HolographerInterface.sol";
 import {IHolographDropERC721} from "../../contracts/drops/interface/IHolographDropERC721.sol";
-import {IOperatorFilterRegistry} from "../../contracts/drops/interface/IOperatorFilterRegistry.sol";
 
 import {HolographERC721} from "../../contracts/enforcer/HolographERC721.sol";
 import {HolographDropERC721} from "../../contracts/drops/token/HolographDropERC721.sol";
@@ -27,8 +26,6 @@ import {HolographDropERC721Proxy} from "../../contracts/drops/proxy/HolographDro
 import {IMetadataRenderer} from "../../contracts/drops/interface/IMetadataRenderer.sol";
 import {MockMetadataRenderer} from "./metadata/MockMetadataRenderer.sol";
 import {DummyMetadataRenderer} from "./utils/DummyMetadataRenderer.sol";
-import {OperatorFilterRegistry} from "./filter/OperatorFilterRegistry.sol";
-import {OperatorFilterRegistryErrorsAndEvents} from "./filter/OperatorFilterRegistryErrorsAndEvents.sol";
 import {DropsMetadataRenderer} from "../../contracts/drops/metadata/DropsMetadataRenderer.sol";
 import {EditionsMetadataRenderer} from "../../contracts/drops/metadata/EditionsMetadataRenderer.sol";
 
@@ -93,12 +90,10 @@ contract HolographDropERC721Test is Test {
       dummyRenderer = new DummyMetadataRenderer();
       DropsInitializer memory initializer = DropsInitializer({
         erc721TransferHelper: address(0x1234),
-        marketFilterAddress: address(0x0),
         initialOwner: DEFAULT_OWNER_ADDRESS,
         fundsRecipient: payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS),
         editionSize: editionSize,
         royaltyBPS: 800,
-        enableOpenSeaRoyaltyRegistry: true,
         salesConfiguration: saleConfig,
         metadataRenderer: address(dummyRenderer),
         metadataRendererInit: ""
@@ -163,12 +158,10 @@ contract HolographDropERC721Test is Test {
       dummyRenderer = new DummyMetadataRenderer();
       DropsInitializer memory initializer = DropsInitializer({
         erc721TransferHelper: address(0x1234),
-        marketFilterAddress: address(subscriptionAddress),
         initialOwner: DEFAULT_OWNER_ADDRESS,
         fundsRecipient: payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS),
         editionSize: editionSize,
         royaltyBPS: 800,
-        enableOpenSeaRoyaltyRegistry: true,
         salesConfiguration: saleConfig,
         metadataRenderer: address(dummyRenderer),
         metadataRendererInit: ""
@@ -227,7 +220,6 @@ contract HolographDropERC721Test is Test {
     alice = vm.addr(1);
 
     vm.prank(HOLOGRAPH_TREASURY_ADDRESS);
-    vm.etch(address(Constants.getOpenseaRoyaltiesRegistry()), address(new OperatorFilterRegistry()).code);
 
     dummyPriceOracle = new DummyDropsPriceOracle();
     // we deploy DropsPriceOracleProxy at specific address
@@ -257,12 +249,10 @@ contract HolographDropERC721Test is Test {
     // Create initializer
     DropsInitializer memory initializer = DropsInitializer({
       erc721TransferHelper: address(0),
-      marketFilterAddress: address(0),
       initialOwner: payable(DEFAULT_OWNER_ADDRESS),
       fundsRecipient: payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS),
       editionSize: 100,
       royaltyBPS: 1000,
-      enableOpenSeaRoyaltyRegistry: true,
       salesConfiguration: saleConfig,
       metadataRenderer: address(dropsMetadataRenderer),
       metadataRendererInit: abi.encode("description", "imageURI", "animationURI")
@@ -344,12 +334,10 @@ contract HolographDropERC721Test is Test {
     vm.expectRevert("HOLOGRAPHER: already initialized");
     DropsInitializer memory initializer = DropsInitializer({
       erc721TransferHelper: address(0x1234),
-      marketFilterAddress: address(0x0),
       initialOwner: DEFAULT_OWNER_ADDRESS,
       fundsRecipient: payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS),
       editionSize: editionSize,
       royaltyBPS: 800,
-      enableOpenSeaRoyaltyRegistry: true,
       salesConfiguration: salesConfig,
       metadataRenderer: address(dummyRenderer),
       metadataRendererInit: ""

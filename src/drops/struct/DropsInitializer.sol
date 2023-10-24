@@ -18,7 +18,6 @@ struct DropsInitializer {
   address payable fundsRecipient;
   uint64 editionSize;
   uint16 royaltyBPS;
-  bool enableOpenSeaRoyaltyRegistry;
   SalesConfiguration salesConfiguration;
   address metadataRenderer;
   bytes metadataRendererInit;
