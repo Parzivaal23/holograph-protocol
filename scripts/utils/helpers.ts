@@ -1,5 +1,7 @@
 declare var global: any;
 import fs from 'fs';
+import readline from 'readline';
+
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import crypto from 'crypto';
@@ -406,7 +408,7 @@ const getGasPrice = async function (): Promise<GasParams> {
     }
   } else {
     return {
-      gasPrice: BigNumber.from('0'),
+      gasPrice: BigNumber.from('25000000000'), // This can be updated to manually set a gas price. Defaulting to 25 gwei for now
       type: 0,
       maxPriorityFeePerGas: null,
       maxFeePerGas: null,
@@ -546,8 +548,7 @@ const genesisDeployHelper = async (
       saltHash: deployer + salt.substring(salt.length - 24),
       deployCode,
       waitConfirmations: 1,
-    } as any)) as any;
-
+    } as any);
     deployments.log('future "' + name + '" address is', contractDeterministic.address);
     await contractDeterministic.deploy();
     contract = await ethers.getContract(name);
@@ -936,6 +937,21 @@ const gweiToWei = function (input: BigNumber): BigNumber {
   return input.mul(BigNumber.from('1000000000'));
 };
 
+// Helper function to ask user a question and get the answer
+function askQuestion(query: string): Promise<string> {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise<string>((resolve) => {
+    rl.question(query, (answer) => {
+      rl.close();
+      resolve(answer);
+    });
+  });
+}
+
 export {
   web3,
   executeJobGas,
@@ -976,4 +992,5 @@ export {
   beamSomething,
   HASH,
   gweiToWei,
+  askQuestion,
 };
