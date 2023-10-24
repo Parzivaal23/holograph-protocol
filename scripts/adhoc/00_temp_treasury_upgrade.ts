@@ -33,7 +33,7 @@ import {
   HolographRoyalties,
   SampleERC20,
   SampleERC721,
-} from '../typechain-types';
+} from '../../typechain-types';
 import {
   genesisDeriveFutureAddress,
   genesisDeployHelper,
@@ -46,10 +46,10 @@ import {
   Signature,
   StrictECDSA,
   txParams,
-} from '../scripts/utils/helpers';
-import { MultisigAwareTx } from '../scripts/utils/multisig-aware-tx';
-import { reservedNamespaceHashes } from '../scripts/utils/reserved-namespaces';
-import { HolographERC20Event, ConfigureEvents } from '../scripts/utils/events';
+} from '../utils/helpers';
+import { MultisigAwareTx } from '../utils/multisig-aware-tx';
+import { reservedNamespaceHashes } from '../utils/reserved-namespaces';
+import { HolographERC20Event, ConfigureEvents } from '../utils/events';
 import { NetworkType, Network, networks } from '@holographxyz/networks';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
 import { Environment, getEnvironment } from '@holographxyz/environment';
