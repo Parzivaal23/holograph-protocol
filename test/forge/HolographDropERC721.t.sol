@@ -129,75 +129,9 @@ contract HolographDropERC721Test is Test {
       vm.recordLogs();
       factory.deployHolographableContract(config, signature, alice); // Pass the payload hash, with the signature, and signer's address
       Vm.Log[] memory entries = vm.getRecordedLogs();
-      address newDropAddress = address(uint160(uint256(entries[2].topics[1])));
+      address newDropAddress = address(uint160(uint256(entries[1].topics[1])));
 
-      // Connect the drop implementation to the drop proxy address
-      erc721Drop = HolographDropERC721(payable(newDropAddress));
-    }
-
-    _;
-  }
-
-  // TODO: Determine if this functionality is needed
-  modifier factoryWithSubscriptionAddress(address subscriptionAddress) {
-    uint64 editionSize = 10;
-    // Wrap in brackets to remove from stack in functions that use this modifier
-    // Avoids stack to deep errors
-    {
-      // Setup sale config for edition
-      SalesConfiguration memory saleConfig = SalesConfiguration({
-        publicSaleStart: 0, // starts now
-        publicSaleEnd: type(uint64).max, // never ends
-        presaleStart: 0, // never starts
-        presaleEnd: 0, // never ends
-        publicSalePrice: usd100,
-        maxSalePurchasePerAddress: 0, // no limit
-        presaleMerkleRoot: bytes32(0) // no presale
-      });
-
-      dummyRenderer = new DummyMetadataRenderer();
-      DropsInitializer memory initializer = DropsInitializer({
-        erc721TransferHelper: address(0x1234),
-        initialOwner: DEFAULT_OWNER_ADDRESS,
-        fundsRecipient: payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS),
-        editionSize: editionSize,
-        royaltyBPS: 800,
-        salesConfiguration: saleConfig,
-        metadataRenderer: address(dummyRenderer),
-        metadataRendererInit: ""
-      });
-
-      // Get deployment config, hash it, and then sign it
-      DeploymentConfig memory config = getDeploymentConfig(
-        "Test NFT", // contractName
-        "TNFT", // contractSymbol
-        1000, // contractBps
-        Constants.getDropsEventConfig(), // eventConfig
-        false, // skipInit
-        initializer
-      );
-      bytes32 hash = keccak256(
-        abi.encodePacked(
-          config.contractType,
-          config.chainType,
-          config.salt,
-          keccak256(config.byteCode),
-          keccak256(config.initCode),
-          alice
-        )
-      );
-
-      (uint8 v, bytes32 r, bytes32 s) = vm.sign(1, hash);
-      Verification memory signature = Verification(r, s, v);
-      address signer = ecrecover(hash, v, r, s);
-
-      HolographFactory factory = HolographFactory(payable(Constants.getHolographFactory()));
-
-      // Deploy the drop / edition
-      vm.recordLogs();
-      factory.deployHolographableContract(config, signature, alice); // Pass the payload hash, with the signature, and signer's address
-      Vm.Log[] memory entries = vm.getRecordedLogs();
-      address newDropAddress = address(uint160(uint256(entries[3].topics[1])));
+      console.log("newDropAddress", newDropAddress);
 
       // Connect the drop implementation to the drop proxy address
       erc721Drop = HolographDropERC721(payable(newDropAddress));
@@ -291,9 +225,7 @@ contract HolographDropERC721Test is Test {
     vm.recordLogs();
     factory.deployHolographableContract(config, signature, alice); // Pass the payload hash, with the signature, and signer's address
     Vm.Log[] memory entries = vm.getRecordedLogs();
-    address newDropAddress = address(uint160(uint256(entries[3].topics[1])));
-
-    console.log("newDropAddress", newDropAddress);
+    address newDropAddress = address(uint160(uint256(entries[2].topics[1])));
 
     // Connect the drop implementation to the drop proxy address
     erc721Drop = HolographDropERC721(payable(newDropAddress));
@@ -656,48 +588,48 @@ contract HolographDropERC721Test is Test {
   //   );
   // }
 
-  // function test_MintLimit(uint8 limit) public setupTestDrop(5000) {
-  //   uint104 price = usd10;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(limit);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
-  //   uint256 totalCost = limit * (nativePrice + nativeFee);
+  function test_MintLimit(uint8 limit) public setupTestDrop(5000) {
+    uint104 price = usd10;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(limit);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint256 totalCost = limit * (nativePrice + nativeFee);
 
-  //   // set limit to speed up tests
-  //   vm.assume(limit > 0 && limit < 50);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: limit,
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
+    // set limit to speed up tests
+    vm.assume(limit > 0 && limit < 50);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: limit,
+      presaleMerkleRoot: bytes32(0)
+    });
 
-  //   // First check that we can mint up to the limit
-  //   vm.deal(address(TEST_ACCOUNT), 1_000_000 ether);
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   erc721Drop.purchase{value: totalCost}(limit);
+    // First check that we can mint up to the limit
+    vm.deal(address(TEST_ACCOUNT), 1_000_000 ether);
+    vm.prank(address(TEST_ACCOUNT));
+    erc721Drop.purchase{value: totalCost}(limit);
 
-  //   assertEq(erc721Drop.saleDetails().totalMinted, limit);
+    assertEq(erc721Drop.saleDetails().totalMinted, limit);
 
-  //   // Then check that we can't mint more than the limit
-  //   uint256 overTheLimit = limit + 1;
-  //   holographFee = erc721Drop.getHolographFeeUsd(overTheLimit);
-  //   nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
-  //   totalCost = overTheLimit * (nativePrice + nativeFee);
+    // Then check that we can't mint more than the limit
+    uint256 overTheLimit = limit + 1;
+    holographFee = erc721Drop.getHolographFeeUsd(overTheLimit);
+    nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    totalCost = overTheLimit * (nativePrice + nativeFee);
 
-  //   vm.deal(address(0x444), 1_000_000 ether);
-  //   vm.prank(address(0x444));
+    vm.deal(address(0x444), 1_000_000 ether);
+    vm.prank(address(0x444));
 
-  //   vm.expectRevert(IHolographDropERC721.Purchase_TooManyForAddress.selector); // 0x220ae94c
-  //   erc721Drop.purchase{value: totalCost}(overTheLimit);
+    vm.expectRevert(IHolographDropERC721.Purchase_TooManyForAddress.selector); // 0x220ae94c
+    erc721Drop.purchase{value: totalCost}(overTheLimit);
 
-  //   // Make sure that no extra tokens were minted
-  //   assertEq(erc721Drop.saleDetails().totalMinted, limit);
-  // }
+    // Make sure that no extra tokens were minted
+    assertEq(erc721Drop.saleDetails().totalMinted, limit);
+  }
 
   // function testSetSalesConfiguration() public setupTestDrop(10) {
   //   uint104 price = usd10;
