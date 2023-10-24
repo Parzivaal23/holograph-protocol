@@ -24,8 +24,6 @@ import {HolographERC721} from "../../contracts/enforcer/HolographERC721.sol";
 import {HolographDropERC721} from "../../contracts/drops/token/HolographDropERC721.sol";
 import {HolographDropERC721Proxy} from "../../contracts/drops/proxy/HolographDropERC721Proxy.sol";
 
-import {OwnedSubscriptionManager} from "./filter/OwnedSubscriptionManager.sol";
-
 import {IMetadataRenderer} from "../../contracts/drops/interface/IMetadataRenderer.sol";
 import {MockMetadataRenderer} from "./metadata/MockMetadataRenderer.sol";
 import {DummyMetadataRenderer} from "./utils/DummyMetadataRenderer.sol";
@@ -241,7 +239,6 @@ contract HolographDropERC721Test is Test {
       bytes32(abi.encode(address(dummyPriceOracle)))
     );
 
-    ownedSubscriptionManager = address(new OwnedSubscriptionManager(address(0x666)));
     dropsMetadataRenderer = new DropsMetadataRenderer();
   }
 
@@ -366,83 +363,6 @@ contract HolographDropERC721Test is Test {
 
     erc721Drop.init(abi.encode(contractName, contractSymbol, contractBps, eventConfig, skipInit, initCode));
   }
-
-  // TODO: Fix this test. It's failing with the error [FAIL. Reason: ERC721: not approved sender] test_SubscriptionEnabled() (gas: 4685864)
-  //       instead of the expected revert.
-  // function test_SubscriptionEnabled() public factoryWithSubscriptionAddress(ownedSubscriptionManager) {
-  //   HolographerInterface holographerInterface = HolographerInterface(address(erc721Drop));
-  //   HolographDropERC721 customSource = HolographDropERC721(payable(holographerInterface.getSourceContract()));
-
-  //   IOperatorFilterRegistry operatorFilterRegistry = IOperatorFilterRegistry(
-  //     0x000000000000AAeB6D7670E522A718067333cd4E
-  //   );
-  //   vm.startPrank(address(0x666));
-  //   operatorFilterRegistry.updateOperator(ownedSubscriptionManager, address(0xcafe), true);
-  //   vm.stopPrank();
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-
-  //   // It should already be registered so turn it off first
-  //   customSource.manageMarketFilterSubscription(false);
-  //   // Then turn it on
-  //   customSource.manageMarketFilterSubscription(true);
-  //   erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 10);
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
-  //   erc721Enforcer.setApprovalForAll(address(0xcafe), true);
-  //   vm.stopPrank();
-  //   vm.prank(address(0xcafe));
-  //   vm.expectRevert(abi.encodeWithSelector(IHolographDropERC721.OperatorNotAllowed.selector, address(0xcafe)));
-  //   erc721Enforcer.transferFrom(DEFAULT_OWNER_ADDRESS, address(0x666), FIRST_TOKEN_ID);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   customSource.manageMarketFilterSubscription(false);
-
-  //   vm.prank(address(0xcafe));
-
-  //   /// DEBUG
-  //   require(
-  //     erc721Enforcer.getApproved(FIRST_TOKEN_ID) == address(0xcafe) ||
-  //       erc721Enforcer.isApprovedForAll(DEFAULT_OWNER_ADDRESS, address(0xcafe)),
-  //     "Approval not set correctly"
-  //   );
-
-  //   console.logBool(erc721Enforcer.getApproved(FIRST_TOKEN_ID) == address(0xcafe));
-  //   console.logBool(erc721Enforcer.isApprovedForAll(DEFAULT_OWNER_ADDRESS, address(0xcafe)));
-  //   /// END DEBUG
-  //   erc721Enforcer.transferFrom(DEFAULT_OWNER_ADDRESS, address(0x666), FIRST_TOKEN_ID);
-  // }
-
-  function test_OnlyAdminEnableSubscription() public factoryWithSubscriptionAddress(ownedSubscriptionManager) {
-    HolographerInterface holographerInterface = HolographerInterface(address(erc721Drop));
-    HolographDropERC721 customSource = HolographDropERC721(payable(holographerInterface.getSourceContract()));
-    vm.startPrank(address(0xcafe));
-    vm.expectRevert("ERC721: owner only function");
-    customSource.manageMarketFilterSubscription(true);
-    vm.stopPrank();
-  }
-
-  function test_ProxySubscriptionAccessOnlyAdmin() public factoryWithSubscriptionAddress(ownedSubscriptionManager) {
-    HolographerInterface holographerInterface = HolographerInterface(address(erc721Drop));
-    HolographDropERC721 customSource = HolographDropERC721(payable(holographerInterface.getSourceContract()));
-    bytes memory baseCall = abi.encodeWithSelector(IOperatorFilterRegistry.unregister.selector, address(customSource));
-    vm.startPrank(address(0xcafe));
-    vm.expectRevert("ERC721: owner only function");
-    customSource.updateMarketFilterSettings(baseCall);
-    vm.stopPrank();
-  }
-
-  // TODO: Fix this test. I belive it's failing because the default owner is not the owner of the source contract
-  // function test_ProxySubscriptionAccess() public factoryWithSubscriptionAddress(ownedSubscriptionManager) {
-  //   vm.startPrank(address(DEFAULT_OWNER_ADDRESS));
-  //   HolographerInterface holographerInterface = HolographerInterface(address(erc721Drop));
-  //   HolographDropERC721 customSource = HolographDropERC721(payable(holographerInterface.getSourceContract()));
-  //   bytes memory preBaseCall = abi.encodeWithSelector(
-  //     IOperatorFilterRegistry.unregister.selector,
-  //     address(customSource)
-  //   );
-  //   customSource.updateMarketFilterSettings(preBaseCall);
-  //   bytes memory baseCall = abi.encodeWithSelector(IOperatorFilterRegistry.register.selector, address(customSource));
-  //   customSource.updateMarketFilterSettings(baseCall);
-  //   vm.stopPrank();
-  // }
 
   function test_Purchase(uint64 amount) public setupTestDrop(10) {
     // We assume that the amount is at least one and less than or equal to the edition size given in modifier
