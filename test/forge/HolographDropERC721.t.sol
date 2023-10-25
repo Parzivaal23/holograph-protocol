@@ -233,360 +233,360 @@ contract HolographDropERC721Test is Test {
     assertEq(erc721Drop.version(), "1.0.0");
   }
 
-  // function test_Init() public setupTestDrop(10) {
-  //   require(erc721Drop.owner() == DEFAULT_OWNER_ADDRESS, "Default owner set wrong");
-  //   (IMetadataRenderer renderer, uint64 editionSize, uint16 royaltyBPS, address payable fundsRecipient) = erc721Drop
-  //     .config();
-  //   require(address(renderer) == address(dummyRenderer), "Renderer is wrong");
-  //   require(editionSize == 10, "EditionSize is wrong");
+  function test_Init() public setupTestDrop(10) {
+    require(erc721Drop.owner() == DEFAULT_OWNER_ADDRESS, "Default owner set wrong");
+    (IMetadataRenderer renderer, uint64 editionSize, uint16 royaltyBPS, address payable fundsRecipient) = erc721Drop
+      .config();
+    require(address(renderer) == address(dummyRenderer), "Renderer is wrong");
+    require(editionSize == 10, "EditionSize is wrong");
 
-  //   require(royaltyBPS == 800, "RoyaltyBPS is wrong");
-  //   require(fundsRecipient == payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS), "FundsRecipient is wrong");
+    require(royaltyBPS == 800, "RoyaltyBPS is wrong");
+    require(fundsRecipient == payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS), "FundsRecipient is wrong");
 
-  //   // Setup sale config
-  //   SalesConfiguration memory salesConfig = SalesConfiguration({
-  //     publicSaleStart: 0, // starts now
-  //     publicSaleEnd: type(uint64).max, // never ends
-  //     presaleStart: 0, // never starts
-  //     presaleEnd: 0, // never ends
-  //     publicSalePrice: 0, // 0 USD
-  //     maxSalePurchasePerAddress: 0, // no limit
-  //     presaleMerkleRoot: bytes32(0) // no presale
-  //   });
+    // Setup sale config
+    SalesConfiguration memory salesConfig = SalesConfiguration({
+      publicSaleStart: 0, // starts now
+      publicSaleEnd: type(uint64).max, // never ends
+      presaleStart: 0, // never starts
+      presaleEnd: 0, // never ends
+      publicSalePrice: 0, // 0 USD
+      maxSalePurchasePerAddress: 0, // no limit
+      presaleMerkleRoot: bytes32(0) // no presale
+    });
 
-  //   HolographERC721 erc721Drop = HolographERC721(payable(address(erc721Drop)));
+    HolographERC721 erc721Drop = HolographERC721(payable(address(erc721Drop)));
 
-  //   string memory name = erc721Drop.name();
-  //   string memory symbol = erc721Drop.symbol();
-  //   require(keccak256(bytes(name)) == keccak256(bytes("Test NFT")));
-  //   require(keccak256(bytes(symbol)) == keccak256(bytes("TNFT")));
+    string memory name = erc721Drop.name();
+    string memory symbol = erc721Drop.symbol();
+    require(keccak256(bytes(name)) == keccak256(bytes("Test NFT")));
+    require(keccak256(bytes(symbol)) == keccak256(bytes("TNFT")));
 
-  //   string memory contractName = "";
-  //   string memory contractSymbol = "";
-  //   uint16 contractBps = 1000;
-  //   uint256 eventConfig = Constants.getDropsEventConfig();
-  //   bool skipInit = false;
+    string memory contractName = "";
+    string memory contractSymbol = "";
+    uint16 contractBps = 1000;
+    uint256 eventConfig = Constants.getDropsEventConfig();
+    bool skipInit = false;
 
-  //   vm.expectRevert("HOLOGRAPHER: already initialized");
-  //   DropsInitializer memory initializer = DropsInitializer({
-  //     erc721TransferHelper: address(0x1234),
-  //     initialOwner: DEFAULT_OWNER_ADDRESS,
-  //     fundsRecipient: payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS),
-  //     editionSize: editionSize,
-  //     royaltyBPS: 800,
-  //     salesConfiguration: salesConfig,
-  //     metadataRenderer: address(dummyRenderer),
-  //     metadataRendererInit: ""
-  //   });
+    vm.expectRevert("HOLOGRAPHER: already initialized");
+    DropsInitializer memory initializer = DropsInitializer({
+      erc721TransferHelper: address(0x1234),
+      initialOwner: DEFAULT_OWNER_ADDRESS,
+      fundsRecipient: payable(DEFAULT_FUNDS_RECIPIENT_ADDRESS),
+      editionSize: editionSize,
+      royaltyBPS: 800,
+      salesConfiguration: salesConfig,
+      metadataRenderer: address(dummyRenderer),
+      metadataRendererInit: ""
+    });
 
-  //   bytes memory initCode = abi.encode(
-  //     bytes32(0x00000000000000000000000000486F6C6F677261706844726F70455243373231), // Source contract type HolographDropERC721
-  //     address(Constants.getHolographRegistry()), // address of registry (to get source contract address from)
-  //     abi.encode(initializer) // actual init code for source contract (HolographDropERC721)
-  //   );
+    bytes memory initCode = abi.encode(
+      bytes32(0x00000000000000000000000000486F6C6F677261706844726F70455243373231), // Source contract type HolographDropERC721
+      address(Constants.getHolographRegistry()), // address of registry (to get source contract address from)
+      abi.encode(initializer) // actual init code for source contract (HolographDropERC721)
+    );
 
-  //   erc721Drop.init(abi.encode(contractName, contractSymbol, contractBps, eventConfig, skipInit, initCode));
-  // }
+    erc721Drop.init(abi.encode(contractName, contractSymbol, contractBps, eventConfig, skipInit, initCode));
+  }
 
-  // function test_Purchase(uint64 amount) public setupTestDrop(10) {
-  //   // We assume that the amount is at least one and less than or equal to the edition size given in modifier
-  //   vm.assume(amount > 0 && amount <= 10);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
+  function test_Purchase(uint64 amount) public setupTestDrop(10) {
+    // We assume that the amount is at least one and less than or equal to the edition size given in modifier
+    vm.assume(amount > 0 && amount <= 10);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
 
-  //   HolographerInterface holographerInterface = HolographerInterface(address(erc721Drop));
-  //   address sourceContractAddress = holographerInterface.getSourceContract();
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    HolographerInterface holographerInterface = HolographerInterface(address(erc721Drop));
+    address sourceContractAddress = holographerInterface.getSourceContract();
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
 
-  //   uint104 price = usd100;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint104 price = usd100;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
 
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
 
-  //   HolographDropERC721(payable(sourceContractAddress)).setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: uint32(amount),
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
+    HolographDropERC721(payable(sourceContractAddress)).setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: uint32(amount),
+      presaleMerkleRoot: bytes32(0)
+    });
 
-  //   uint256 totalCost = amount * (nativePrice + nativeFee);
+    uint256 totalCost = amount * (nativePrice + nativeFee);
 
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   vm.deal(address(TEST_ACCOUNT), totalCost);
-  //   erc721Drop.purchase{value: totalCost}(amount);
+    vm.prank(address(TEST_ACCOUNT));
+    vm.deal(address(TEST_ACCOUNT), totalCost);
+    erc721Drop.purchase{value: totalCost}(amount);
 
-  //   assertEq(erc721Drop.saleDetails().maxSupply, 10);
-  //   assertEq(erc721Drop.saleDetails().totalMinted, amount);
+    assertEq(erc721Drop.saleDetails().maxSupply, 10);
+    assertEq(erc721Drop.saleDetails().totalMinted, amount);
 
-  //   // First token ID is this long number due to the chain id prefix
-  //   require(erc721Enforcer.ownerOf(FIRST_TOKEN_ID) == address(TEST_ACCOUNT), "Owner is wrong for new minted token");
-  //   assertEq(address(sourceContractAddress).balance, amount * nativePrice - nativeFee);
+    // First token ID is this long number due to the chain id prefix
+    require(erc721Enforcer.ownerOf(FIRST_TOKEN_ID) == address(TEST_ACCOUNT), "Owner is wrong for new minted token");
+    assertEq(address(sourceContractAddress).balance, amount * nativePrice - nativeFee);
 
-  //   // Check that the fee was sent to the treasury
-  //   treasury = HolographTreasury(payable(Constants.getHolographTreasury()));
-  //   console.log("treasury balance", address(treasury).balance);
-  //   assertEq(address(treasury).balance, nativeFee);
+    // Check that the fee was sent to the treasury
+    treasury = HolographTreasury(payable(Constants.getHolographTreasury()));
+    console.log("treasury balance", address(treasury).balance);
+    assertEq(address(treasury).balance, nativeFee);
 
-  //   // Get the treasury admin and keep track of what their balance is
-  //   address treasuryAdmin = treasury.getAdmin();
-  //   uint256 treasuryBalanceBefore = address(treasuryAdmin).balance;
-  //   vm.prank(treasuryAdmin);
+    // Get the treasury admin and keep track of what their balance is
+    address treasuryAdmin = treasury.getAdmin();
+    uint256 treasuryBalanceBefore = address(treasuryAdmin).balance;
+    vm.prank(treasuryAdmin);
 
-  //   // Check that the treasury admin can withdraw the fee
-  //   treasury.withdraw();
+    // Check that the treasury admin can withdraw the fee
+    treasury.withdraw();
 
-  //   // Is the fee we withdrew equal to the fee we expected?
-  //   // We subtract the balance before from the balance after to get the fee that should have been transferred during the withdraw
-  //   uint256 treasuryBalanceAfter = address(treasuryAdmin).balance;
-  //   assertEq(treasuryBalanceAfter - treasuryBalanceBefore, nativeFee);
-  // }
+    // Is the fee we withdrew equal to the fee we expected?
+    // We subtract the balance before from the balance after to get the fee that should have been transferred during the withdraw
+    uint256 treasuryBalanceAfter = address(treasuryAdmin).balance;
+    assertEq(treasuryBalanceAfter - treasuryBalanceBefore, nativeFee);
+  }
 
-  // function test_PurchaseFree(uint64 amount) public setupTestDrop(10) {
-  //   // We assume that the amount is at least one and less than or equal to the edition size given in modifier
-  //   vm.assume(amount > 0 && amount <= 10);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
+  function test_PurchaseFree(uint64 amount) public setupTestDrop(10) {
+    // We assume that the amount is at least one and less than or equal to the edition size given in modifier
+    vm.assume(amount > 0 && amount <= 10);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
 
-  //   HolographerInterface holographerInterface = HolographerInterface(address(erc721Drop));
-  //   address sourceContractAddress = holographerInterface.getSourceContract();
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    HolographerInterface holographerInterface = HolographerInterface(address(erc721Drop));
+    address sourceContractAddress = holographerInterface.getSourceContract();
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
 
-  //   uint104 price = 0; // Set the price to zero
-  //   uint256 nativePrice = 0; // Set the price to zero
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint104 price = 0; // Set the price to zero
+    uint256 nativePrice = 0; // Set the price to zero
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
 
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
 
-  //   HolographDropERC721(payable(sourceContractAddress)).setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: uint32(amount),
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
+    HolographDropERC721(payable(sourceContractAddress)).setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: uint32(amount),
+      presaleMerkleRoot: bytes32(0)
+    });
 
-  //   uint256 totalCost = amount * nativeFee; // This will be equal to the holographFee as the nativePrice is 0
+    uint256 totalCost = amount * nativeFee; // This will be equal to the holographFee as the nativePrice is 0
 
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   vm.deal(address(TEST_ACCOUNT), totalCost);
-  //   erc721Drop.purchase{value: totalCost}(amount);
+    vm.prank(address(TEST_ACCOUNT));
+    vm.deal(address(TEST_ACCOUNT), totalCost);
+    erc721Drop.purchase{value: totalCost}(amount);
 
-  //   assertEq(erc721Drop.saleDetails().maxSupply, 10);
-  //   assertEq(erc721Drop.saleDetails().totalMinted, amount);
+    assertEq(erc721Drop.saleDetails().maxSupply, 10);
+    assertEq(erc721Drop.saleDetails().totalMinted, amount);
 
-  //   // First token ID is this long number due to the chain id prefix
-  //   require(erc721Enforcer.ownerOf(FIRST_TOKEN_ID) == address(TEST_ACCOUNT), "Owner is wrong for new minted token");
-  //   assertEq(address(sourceContractAddress).balance, totalCost - nativeFee); // Expect the balance to be equal to the fee received
-  // }
+    // First token ID is this long number due to the chain id prefix
+    require(erc721Enforcer.ownerOf(FIRST_TOKEN_ID) == address(TEST_ACCOUNT), "Owner is wrong for new minted token");
+    assertEq(address(sourceContractAddress).balance, totalCost - nativeFee); // Expect the balance to be equal to the fee received
+  }
 
-  // function test_PurchaseTime() public setupTestDrop(10) {
-  //   uint256 amount = 1;
-  //   uint104 price = usd100;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
-  //   uint256 totalCost = amount * (nativePrice + nativeFee);
+  function test_PurchaseTime() public setupTestDrop(10) {
+    uint256 amount = 1;
+    uint104 price = usd100;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint256 totalCost = amount * (nativePrice + nativeFee);
 
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: 0,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: 2,
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: 0,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: 2,
+      presaleMerkleRoot: bytes32(0)
+    });
 
-  //   assertTrue(!erc721Drop.saleDetails().publicSaleActive);
+    assertTrue(!erc721Drop.saleDetails().publicSaleActive);
 
-  //   vm.deal(address(TEST_ACCOUNT), totalCost);
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   vm.expectRevert(IHolographDropERC721.Sale_Inactive.selector);
-  //   erc721Drop.purchase{value: totalCost}(1);
+    vm.deal(address(TEST_ACCOUNT), totalCost);
+    vm.prank(address(TEST_ACCOUNT));
+    vm.expectRevert(IHolographDropERC721.Sale_Inactive.selector);
+    erc721Drop.purchase{value: totalCost}(1);
 
-  //   assertEq(erc721Drop.saleDetails().maxSupply, 10);
-  //   assertEq(erc721Drop.saleDetails().totalMinted, 0);
+    assertEq(erc721Drop.saleDetails().maxSupply, 10);
+    assertEq(erc721Drop.saleDetails().totalMinted, 0);
 
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 9 * 3600,
-  //     publicSaleEnd: 11 * 3600,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     maxSalePurchasePerAddress: 20,
-  //     publicSalePrice: price,
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 9 * 3600,
+      publicSaleEnd: 11 * 3600,
+      presaleStart: 0,
+      presaleEnd: 0,
+      maxSalePurchasePerAddress: 20,
+      publicSalePrice: price,
+      presaleMerkleRoot: bytes32(0)
+    });
 
-  //   assertTrue(!erc721Drop.saleDetails().publicSaleActive);
-  //   // jan 1st 1980
-  //   vm.warp(10 * 3600);
-  //   assertTrue(erc721Drop.saleDetails().publicSaleActive);
-  //   assertTrue(!erc721Drop.saleDetails().presaleActive);
+    assertTrue(!erc721Drop.saleDetails().publicSaleActive);
+    // jan 1st 1980
+    vm.warp(10 * 3600);
+    assertTrue(erc721Drop.saleDetails().publicSaleActive);
+    assertTrue(!erc721Drop.saleDetails().presaleActive);
 
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   erc721Drop.purchase{value: totalCost}(1);
+    vm.prank(address(TEST_ACCOUNT));
+    erc721Drop.purchase{value: totalCost}(1);
 
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
 
-  //   assertEq(erc721Drop.saleDetails().totalMinted, 1);
-  //   assertEq(erc721Enforcer.ownerOf(FIRST_TOKEN_ID), address(TEST_ACCOUNT));
-  // }
+    assertEq(erc721Drop.saleDetails().totalMinted, 1);
+    assertEq(erc721Enforcer.ownerOf(FIRST_TOKEN_ID), address(TEST_ACCOUNT));
+  }
 
-  // function test_OnlyAdminCanWithdrawFromTreasury() public {
-  //   treasury = HolographTreasury(payable(Constants.getHolographTreasury()));
-  //   vm.startPrank(address(0xcafe));
-  //   vm.expectRevert("HOLOGRAPH: admin only function");
-  //   treasury.withdraw();
-  //   vm.stopPrank();
-  // }
+  function test_OnlyAdminCanWithdrawFromTreasury() public {
+    treasury = HolographTreasury(payable(Constants.getHolographTreasury()));
+    vm.startPrank(address(0xcafe));
+    vm.expectRevert("HOLOGRAPH: admin only function");
+    treasury.withdraw();
+    vm.stopPrank();
+  }
 
-  // function test_MintAdmin() public setupTestDrop(10) {
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
-  //   assertEq(erc721Drop.saleDetails().maxSupply, 10);
-  //   assertEq(erc721Drop.saleDetails().totalMinted, 1);
+  function test_MintAdmin() public setupTestDrop(10) {
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
+    assertEq(erc721Drop.saleDetails().maxSupply, 10);
+    assertEq(erc721Drop.saleDetails().totalMinted, 1);
 
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
-  //   require(erc721Enforcer.ownerOf(FIRST_TOKEN_ID) == DEFAULT_OWNER_ADDRESS, "Owner is wrong for new minted token");
-  // }
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    require(erc721Enforcer.ownerOf(FIRST_TOKEN_ID) == DEFAULT_OWNER_ADDRESS, "Owner is wrong for new minted token");
+  }
 
-  // function test_MintMulticall() public setupTestDrop(10) {
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   bytes[] memory calls = new bytes[](3);
-  //   calls[0] = abi.encodeWithSelector(IHolographDropERC721.adminMint.selector, DEFAULT_OWNER_ADDRESS, 5);
-  //   calls[1] = abi.encodeWithSelector(IHolographDropERC721.adminMint.selector, address(0x123), 3);
-  //   calls[2] = abi.encodeWithSelector(IHolographDropERC721.saleDetails.selector);
-  //   bytes[] memory results = erc721Drop.multicall(calls);
+  function test_MintMulticall() public setupTestDrop(10) {
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    bytes[] memory calls = new bytes[](3);
+    calls[0] = abi.encodeWithSelector(IHolographDropERC721.adminMint.selector, DEFAULT_OWNER_ADDRESS, 5);
+    calls[1] = abi.encodeWithSelector(IHolographDropERC721.adminMint.selector, address(0x123), 3);
+    calls[2] = abi.encodeWithSelector(IHolographDropERC721.saleDetails.selector);
+    bytes[] memory results = erc721Drop.multicall(calls);
 
-  //   (bool saleActive, bool presaleActive, uint256 publicSalePrice, , , , , , , , ) = abi.decode(
-  //     results[2],
-  //     (bool, bool, uint256, uint64, uint64, uint64, uint64, bytes32, uint256, uint256, uint256)
-  //   );
-  //   assertTrue(saleActive);
-  //   assertTrue(!presaleActive);
-  //   assertEq(publicSalePrice, usd100);
-  //   uint256 firstMintedId = abi.decode(results[0], (uint256));
-  //   uint256 secondMintedId = abi.decode(results[1], (uint256));
+    (bool saleActive, bool presaleActive, uint256 publicSalePrice, , , , , , , , ) = abi.decode(
+      results[2],
+      (bool, bool, uint256, uint64, uint64, uint64, uint64, bytes32, uint256, uint256, uint256)
+    );
+    assertTrue(saleActive);
+    assertTrue(!presaleActive);
+    assertEq(publicSalePrice, usd100);
+    uint256 firstMintedId = abi.decode(results[0], (uint256));
+    uint256 secondMintedId = abi.decode(results[1], (uint256));
 
-  //   assertEq(firstMintedId, 5);
-  //   assertEq(secondMintedId, 8);
-  // }
+    assertEq(firstMintedId, 5);
+    assertEq(secondMintedId, 8);
+  }
 
-  // function test_UpdatePriceMulticall() public setupTestDrop(10) {
-  //   uint256 amount = 2;
-  //   uint104 price = usd100;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
-  //   uint256 totalCost = amount * (nativePrice + nativeFee);
+  function test_UpdatePriceMulticall() public setupTestDrop(10) {
+    uint256 amount = 2;
+    uint104 price = usd100;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint256 totalCost = amount * (nativePrice + nativeFee);
 
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   bytes[] memory calls = new bytes[](3);
-  //   calls[0] = abi.encodeWithSelector(
-  //     IHolographDropERC721.setSaleConfiguration.selector,
-  //     price,
-  //     2,
-  //     0,
-  //     type(uint64).max,
-  //     0,
-  //     0,
-  //     bytes32(0)
-  //   );
-  //   calls[1] = abi.encodeWithSelector(IHolographDropERC721.adminMint.selector, address(0x999), 3);
-  //   calls[2] = abi.encodeWithSelector(IHolographDropERC721.adminMint.selector, address(0x123), 3);
-  //   bytes[] memory results = erc721Drop.multicall(calls);
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    bytes[] memory calls = new bytes[](3);
+    calls[0] = abi.encodeWithSelector(
+      IHolographDropERC721.setSaleConfiguration.selector,
+      price,
+      2,
+      0,
+      type(uint64).max,
+      0,
+      0,
+      bytes32(0)
+    );
+    calls[1] = abi.encodeWithSelector(IHolographDropERC721.adminMint.selector, address(0x999), 3);
+    calls[2] = abi.encodeWithSelector(IHolographDropERC721.adminMint.selector, address(0x123), 3);
+    bytes[] memory results = erc721Drop.multicall(calls);
 
-  //   SaleDetails memory saleDetails = erc721Drop.saleDetails();
+    SaleDetails memory saleDetails = erc721Drop.saleDetails();
 
-  //   assertTrue(saleDetails.publicSaleActive);
-  //   assertTrue(!saleDetails.presaleActive);
-  //   assertEq(saleDetails.publicSalePrice, price);
-  //   uint256 firstMintedId = abi.decode(results[1], (uint256));
-  //   uint256 secondMintedId = abi.decode(results[2], (uint256));
-  //   assertEq(firstMintedId, 3);
-  //   assertEq(secondMintedId, 6);
-  //   vm.stopPrank();
-  //   vm.startPrank(address(0x111));
-  //   vm.deal(address(0x111), totalCost);
-  //   erc721Drop.purchase{value: totalCost}(2);
+    assertTrue(saleDetails.publicSaleActive);
+    assertTrue(!saleDetails.presaleActive);
+    assertEq(saleDetails.publicSalePrice, price);
+    uint256 firstMintedId = abi.decode(results[1], (uint256));
+    uint256 secondMintedId = abi.decode(results[2], (uint256));
+    assertEq(firstMintedId, 3);
+    assertEq(secondMintedId, 6);
+    vm.stopPrank();
+    vm.startPrank(address(0x111));
+    vm.deal(address(0x111), totalCost);
+    erc721Drop.purchase{value: totalCost}(2);
 
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
-  //   assertEq(erc721Enforcer.balanceOf(address(0x111)), 2);
-  //   vm.stopPrank();
-  // }
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    assertEq(erc721Enforcer.balanceOf(address(0x111)), 2);
+    vm.stopPrank();
+  }
 
-  // function test_MintWrongValue() public setupTestDrop(10) {
-  //   uint256 amount = 1;
-  //   uint104 price = usd10;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
-  //   uint256 totalCost = amount * (nativePrice + nativeFee);
+  function test_MintWrongValue() public setupTestDrop(10) {
+    uint256 amount = 1;
+    uint104 price = usd10;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint256 totalCost = amount * (nativePrice + nativeFee);
 
-  //   vm.deal(address(TEST_ACCOUNT), dummyPriceOracle.convertUsdToWei(usd1000));
+    vm.deal(address(TEST_ACCOUNT), dummyPriceOracle.convertUsdToWei(usd1000));
 
-  //   // First configure sale to make it inactive
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: type(uint64).max,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: 2,
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   vm.expectRevert(IHolographDropERC721.Sale_Inactive.selector);
-  //   erc721Drop.purchase{value: nativePrice}(1);
+    // First configure sale to make it inactive
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: type(uint64).max,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: 2,
+      presaleMerkleRoot: bytes32(0)
+    });
+    vm.prank(address(TEST_ACCOUNT));
+    vm.expectRevert(IHolographDropERC721.Sale_Inactive.selector);
+    erc721Drop.purchase{value: nativePrice}(1);
 
-  //   // Then configure sale to make it active but with wrong price
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: 2,
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   vm.expectRevert(
-  //     abi.encodeWithSelector(IHolographDropERC721.Purchase_WrongPrice.selector, uint256(price + holographFee))
-  //   );
-  //   erc721Drop.purchase{value: totalCost / 2}(1);
-  // }
+    // Then configure sale to make it active but with wrong price
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: 2,
+      presaleMerkleRoot: bytes32(0)
+    });
+    vm.prank(address(TEST_ACCOUNT));
+    vm.expectRevert(
+      abi.encodeWithSelector(IHolographDropERC721.Purchase_WrongPrice.selector, uint256(price + holographFee))
+    );
+    erc721Drop.purchase{value: totalCost / 2}(1);
+  }
 
-  // function test_Withdraw(uint128 amount) public setupTestDrop(10) {
-  //   vm.assume(amount > 0.01 ether);
-  //   vm.deal(address(erc721Drop), amount);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
+  function test_Withdraw(uint128 amount) public setupTestDrop(10) {
+    vm.assume(amount > 0.01 ether);
+    vm.deal(address(erc721Drop), amount);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
 
-  //   // withdrawnBy and withdrawnTo are indexed in the first two positions
-  //   vm.expectEmit(true, true, false, false);
-  //   uint256 leftoverFunds = amount - (amount * 1) / 20;
-  //   emit FundsWithdrawn(DEFAULT_OWNER_ADDRESS, DEFAULT_FUNDS_RECIPIENT_ADDRESS, leftoverFunds);
-  //   erc721Drop.withdraw();
+    // withdrawnBy and withdrawnTo are indexed in the first two positions
+    vm.expectEmit(true, true, false, false);
+    uint256 leftoverFunds = amount - (amount * 1) / 20;
+    emit FundsWithdrawn(DEFAULT_OWNER_ADDRESS, DEFAULT_FUNDS_RECIPIENT_ADDRESS, leftoverFunds);
+    erc721Drop.withdraw();
 
-  //   assertTrue(
-  //     HOLOGRAPH_TREASURY_ADDRESS.balance < ((uint256(amount) * 1_000 * 5) / 100000) + 2 ||
-  //       HOLOGRAPH_TREASURY_ADDRESS.balance > ((uint256(amount) * 1_000 * 5) / 100000) + 2
-  //   );
-  //   assertTrue(
-  //     DEFAULT_FUNDS_RECIPIENT_ADDRESS.balance > ((uint256(amount) * 1_000 * 95) / 100000) - 2 ||
-  //       DEFAULT_FUNDS_RECIPIENT_ADDRESS.balance < ((uint256(amount) * 1_000 * 95) / 100000) + 2
-  //   );
-  // }
+    assertTrue(
+      HOLOGRAPH_TREASURY_ADDRESS.balance < ((uint256(amount) * 1_000 * 5) / 100000) + 2 ||
+        HOLOGRAPH_TREASURY_ADDRESS.balance > ((uint256(amount) * 1_000 * 5) / 100000) + 2
+    );
+    assertTrue(
+      DEFAULT_FUNDS_RECIPIENT_ADDRESS.balance > ((uint256(amount) * 1_000 * 95) / 100000) - 2 ||
+        DEFAULT_FUNDS_RECIPIENT_ADDRESS.balance < ((uint256(amount) * 1_000 * 95) / 100000) + 2
+    );
+  }
 
   function test_MintLimit(uint8 limit) public setupTestDrop(5000) {
     uint104 price = usd10;
@@ -631,257 +631,257 @@ contract HolographDropERC721Test is Test {
     assertEq(erc721Drop.saleDetails().totalMinted, limit);
   }
 
-  // function testSetSalesConfiguration() public setupTestDrop(10) {
-  //   uint104 price = usd10;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 100,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: 10,
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
+  function testSetSalesConfiguration() public setupTestDrop(10) {
+    uint104 price = usd10;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 100,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: 10,
+      presaleMerkleRoot: bytes32(0)
+    });
 
-  //   (, , , , , uint64 presaleEndLookup, ) = erc721Drop.salesConfig();
-  //   assertEq(presaleEndLookup, 100);
+    (, , , , , uint64 presaleEndLookup, ) = erc721Drop.salesConfig();
+    assertEq(presaleEndLookup, 100);
 
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 100,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: 1003,
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 100,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: 1003,
+      presaleMerkleRoot: bytes32(0)
+    });
 
-  //   (, , , , uint64 presaleStartLookup2, uint64 presaleEndLookup2, ) = erc721Drop.salesConfig();
-  //   assertEq(presaleEndLookup2, 0);
-  //   assertEq(presaleStartLookup2, 100);
-  // }
+    (, , , , uint64 presaleStartLookup2, uint64 presaleEndLookup2, ) = erc721Drop.salesConfig();
+    assertEq(presaleEndLookup2, 0);
+    assertEq(presaleStartLookup2, 100);
+  }
 
-  // function test_GlobalLimit(uint16 limit) public setupTestDrop(uint64(limit)) {
-  //   // Set assume to a more reasonable number to speed up tests
-  //   vm.assume(limit > 0 && limit < 10);
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, limit);
-  //   vm.expectRevert(IHolographDropERC721.Mint_SoldOut.selector);
-  //   erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
-  // }
+  function test_GlobalLimit(uint16 limit) public setupTestDrop(uint64(limit)) {
+    // Set assume to a more reasonable number to speed up tests
+    vm.assume(limit > 0 && limit < 10);
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, limit);
+    vm.expectRevert(IHolographDropERC721.Mint_SoldOut.selector);
+    erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
+  }
 
-  // function test_WithdrawNotAllowed() public setupTestDrop(10) {
-  //   vm.expectRevert(IHolographDropERC721.Access_WithdrawNotAllowed.selector);
-  //   erc721Drop.withdraw();
-  // }
+  function test_WithdrawNotAllowed() public setupTestDrop(10) {
+    vm.expectRevert(IHolographDropERC721.Access_WithdrawNotAllowed.selector);
+    erc721Drop.withdraw();
+  }
 
-  // function test_InvalidFinalizeOpenEdition() public setupTestDrop(5) {
-  //   uint amount = 3;
-  //   uint104 price = usd10;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
-  //   uint256 totalCost = amount * (nativePrice + nativeFee);
+  function test_InvalidFinalizeOpenEdition() public setupTestDrop(5) {
+    uint amount = 3;
+    uint104 price = usd10;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint256 totalCost = amount * (nativePrice + nativeFee);
 
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     presaleMerkleRoot: bytes32(0),
-  //     maxSalePurchasePerAddress: 5
-  //   });
-  //   erc721Drop.purchase{value: totalCost}(3);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.adminMint(address(0x1234), 2);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   vm.expectRevert(IHolographDropERC721.Admin_UnableToFinalizeNotOpenEdition.selector);
-  //   erc721Drop.finalizeOpenEdition();
-  // }
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      presaleMerkleRoot: bytes32(0),
+      maxSalePurchasePerAddress: 5
+    });
+    erc721Drop.purchase{value: totalCost}(3);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.adminMint(address(0x1234), 2);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    vm.expectRevert(IHolographDropERC721.Admin_UnableToFinalizeNotOpenEdition.selector);
+    erc721Drop.finalizeOpenEdition();
+  }
 
-  // function test_ValidFinalizeOpenEdition() public setupTestDrop(type(uint64).max) {
-  //   uint amount = 3;
-  //   uint104 price = usd10;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
-  //   uint256 totalCost = amount * (nativePrice + nativeFee);
+  function test_ValidFinalizeOpenEdition() public setupTestDrop(type(uint64).max) {
+    uint amount = 3;
+    uint104 price = usd10;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint256 totalCost = amount * (nativePrice + nativeFee);
 
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     presaleMerkleRoot: bytes32(0),
-  //     maxSalePurchasePerAddress: 10
-  //   });
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      presaleMerkleRoot: bytes32(0),
+      maxSalePurchasePerAddress: 10
+    });
 
-  //   erc721Drop.purchase{value: totalCost}(3);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.adminMint(address(0x1234), 2);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.finalizeOpenEdition();
-  //   vm.expectRevert(IHolographDropERC721.Mint_SoldOut.selector);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.adminMint(address(0x1234), 2);
-  //   vm.expectRevert(IHolographDropERC721.Mint_SoldOut.selector);
-  //   erc721Drop.purchase{value: nativePrice * 3}(3);
-  // }
+    erc721Drop.purchase{value: totalCost}(3);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.adminMint(address(0x1234), 2);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.finalizeOpenEdition();
+    vm.expectRevert(IHolographDropERC721.Mint_SoldOut.selector);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.adminMint(address(0x1234), 2);
+    vm.expectRevert(IHolographDropERC721.Mint_SoldOut.selector);
+    erc721Drop.purchase{value: nativePrice * 3}(3);
+  }
 
-  // function test_AdminMint() public setupTestDrop(10) {
-  //   address minter = address(0x32402);
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
-  //   require(erc721Enforcer.balanceOf(DEFAULT_OWNER_ADDRESS) == 1, "Wrong balance");
-  //   erc721Drop.adminMint(minter, 1);
-  //   require(erc721Enforcer.balanceOf(minter) == 1, "Wrong balance");
-  //   assertEq(erc721Drop.saleDetails().totalMinted, 2);
-  // }
+  function test_AdminMint() public setupTestDrop(10) {
+    address minter = address(0x32402);
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    require(erc721Enforcer.balanceOf(DEFAULT_OWNER_ADDRESS) == 1, "Wrong balance");
+    erc721Drop.adminMint(minter, 1);
+    require(erc721Enforcer.balanceOf(minter) == 1, "Wrong balance");
+    assertEq(erc721Drop.saleDetails().totalMinted, 2);
+  }
 
-  // // NOTE: This test functions differently than previously because change
-  // //       to allow zero edition size in canMintTokens modifier
-  // //       This test is now testing that tokens can be minted when edition size is zero
-  // function test_EditionSizeZero() public setupTestDrop(0) {
-  //   uint256 amount = 2;
-  //   uint104 price = usd100;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
-  //   uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
-  //   uint256 totalCost = amount * (nativePrice + nativeFee);
+  // NOTE: This test functions differently than previously because change
+  //       to allow zero edition size in canMintTokens modifier
+  //       This test is now testing that tokens can be minted when edition size is zero
+  function test_EditionSizeZero() public setupTestDrop(0) {
+    uint256 amount = 2;
+    uint104 price = usd100;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    uint256 holographFee = erc721Drop.getHolographFeeUsd(amount);
+    uint256 nativeFee = dummyPriceOracle.convertUsdToWei(holographFee);
+    uint256 totalCost = amount * (nativePrice + nativeFee);
 
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   address minter = address(0x32402);
-  //   erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
-  //   erc721Drop.adminMint(minter, 1);
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    address minter = address(0x32402);
+    erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
+    erc721Drop.adminMint(minter, 1);
 
-  //   erc721Drop.setSaleConfiguration({
-  //     publicSaleStart: 0,
-  //     publicSaleEnd: type(uint64).max,
-  //     presaleStart: 0,
-  //     presaleEnd: 0,
-  //     publicSalePrice: price,
-  //     maxSalePurchasePerAddress: 2,
-  //     presaleMerkleRoot: bytes32(0)
-  //   });
+    erc721Drop.setSaleConfiguration({
+      publicSaleStart: 0,
+      publicSaleEnd: type(uint64).max,
+      presaleStart: 0,
+      presaleEnd: 0,
+      publicSalePrice: price,
+      maxSalePurchasePerAddress: 2,
+      presaleMerkleRoot: bytes32(0)
+    });
 
-  //   vm.stopPrank();
-  //   vm.deal(address(TEST_ACCOUNT), totalCost);
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   erc721Drop.purchase{value: totalCost}(2);
-  // }
+    vm.stopPrank();
+    vm.deal(address(TEST_ACCOUNT), totalCost);
+    vm.prank(address(TEST_ACCOUNT));
+    erc721Drop.purchase{value: totalCost}(2);
+  }
 
-  // function test_SoldOut() public setupTestDrop(1) {
-  //   uint104 price = usd10;
-  //   uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
-  //   vm.prank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
+  function test_SoldOut() public setupTestDrop(1) {
+    uint104 price = usd10;
+    uint256 nativePrice = dummyPriceOracle.convertUsdToWei(price);
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 1);
 
-  //   vm.deal(address(TEST_ACCOUNT), nativePrice * 2);
-  //   vm.prank(address(TEST_ACCOUNT));
-  //   vm.expectRevert(IHolographDropERC721.Mint_SoldOut.selector);
-  //   erc721Drop.purchase{value: nativePrice}(1);
-  // }
+    vm.deal(address(TEST_ACCOUNT), nativePrice * 2);
+    vm.prank(address(TEST_ACCOUNT));
+    vm.expectRevert(IHolographDropERC721.Mint_SoldOut.selector);
+    erc721Drop.purchase{value: nativePrice}(1);
+  }
 
-  // // test Admin airdrop
-  // function test_AdminMintAirdrop() public setupTestDrop(1000) {
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   address[] memory toMint = new address[](4);
-  //   toMint[0] = address(0x10);
-  //   toMint[1] = address(0x11);
-  //   toMint[2] = address(0x12);
-  //   toMint[3] = address(0x13);
-  //   erc721Drop.adminMintAirdrop(toMint);
+  // test Admin airdrop
+  function test_AdminMintAirdrop() public setupTestDrop(1000) {
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    address[] memory toMint = new address[](4);
+    toMint[0] = address(0x10);
+    toMint[1] = address(0x11);
+    toMint[2] = address(0x12);
+    toMint[3] = address(0x13);
+    erc721Drop.adminMintAirdrop(toMint);
 
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
-  //   assertEq(erc721Drop.saleDetails().totalMinted, 4);
-  //   assertEq(erc721Enforcer.balanceOf(address(0x10)), 1);
-  //   assertEq(erc721Enforcer.balanceOf(address(0x11)), 1);
-  //   assertEq(erc721Enforcer.balanceOf(address(0x12)), 1);
-  //   assertEq(erc721Enforcer.balanceOf(address(0x13)), 1);
-  // }
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    assertEq(erc721Drop.saleDetails().totalMinted, 4);
+    assertEq(erc721Enforcer.balanceOf(address(0x10)), 1);
+    assertEq(erc721Enforcer.balanceOf(address(0x11)), 1);
+    assertEq(erc721Enforcer.balanceOf(address(0x12)), 1);
+    assertEq(erc721Enforcer.balanceOf(address(0x13)), 1);
+  }
 
-  // function test_AdminMintAirdropFails() public setupTestDrop(1000) {
-  //   vm.startPrank(address(0x10));
-  //   address[] memory toMint = new address[](4);
-  //   toMint[0] = address(0x10);
-  //   toMint[1] = address(0x11);
-  //   toMint[2] = address(0x12);
-  //   toMint[3] = address(0x13);
-  //   vm.expectRevert("ERC721: owner only function");
-  //   erc721Drop.adminMintAirdrop(toMint);
-  // }
+  function test_AdminMintAirdropFails() public setupTestDrop(1000) {
+    vm.startPrank(address(0x10));
+    address[] memory toMint = new address[](4);
+    toMint[0] = address(0x10);
+    toMint[1] = address(0x11);
+    toMint[2] = address(0x12);
+    toMint[3] = address(0x13);
+    vm.expectRevert("ERC721: owner only function");
+    erc721Drop.adminMintAirdrop(toMint);
+  }
 
-  // // test admin mint non-admin permissions
-  // function test_AdminMintBatch() public setupTestDrop(1000) {
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 100);
+  // test admin mint non-admin permissions
+  function test_AdminMintBatch() public setupTestDrop(1000) {
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    erc721Drop.adminMint(DEFAULT_OWNER_ADDRESS, 100);
 
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
-  //   assertEq(erc721Drop.saleDetails().totalMinted, 100);
-  //   assertEq(erc721Enforcer.balanceOf(DEFAULT_OWNER_ADDRESS), 100);
-  // }
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    assertEq(erc721Drop.saleDetails().totalMinted, 100);
+    assertEq(erc721Enforcer.balanceOf(DEFAULT_OWNER_ADDRESS), 100);
+  }
 
-  // function test_AdminMintBatchFails() public setupTestDrop(1000) {
-  //   vm.startPrank(address(0x10));
-  //   vm.expectRevert("ERC721: owner only function");
-  //   erc721Drop.adminMint(address(0x10), 100);
-  // }
+  function test_AdminMintBatchFails() public setupTestDrop(1000) {
+    vm.startPrank(address(0x10));
+    vm.expectRevert("ERC721: owner only function");
+    erc721Drop.adminMint(address(0x10), 100);
+  }
 
-  // function test_Burn() public setupTestDrop(10) {
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   address minter = address(0x32402);
+  function test_Burn() public setupTestDrop(10) {
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    address minter = address(0x32402);
 
-  //   address[] memory airdrop = new address[](1);
-  //   airdrop[0] = minter;
+    address[] memory airdrop = new address[](1);
+    airdrop[0] = minter;
 
-  //   erc721Drop.adminMintAirdrop(airdrop);
-  //   vm.stopPrank();
+    erc721Drop.adminMintAirdrop(airdrop);
+    vm.stopPrank();
 
-  //   vm.startPrank(minter);
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
-  //   erc721Enforcer.burn(FIRST_TOKEN_ID);
-  //   vm.stopPrank();
-  // }
+    vm.startPrank(minter);
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    erc721Enforcer.burn(FIRST_TOKEN_ID);
+    vm.stopPrank();
+  }
 
-  // function test_BurnNonOwner() public setupTestDrop(10) {
-  //   address minter = address(0x32402);
-  //   vm.startPrank(DEFAULT_OWNER_ADDRESS);
-  //   address[] memory airdrop = new address[](1);
-  //   airdrop[0] = minter;
-  //   erc721Drop.adminMintAirdrop(airdrop);
-  //   vm.stopPrank();
+  function test_BurnNonOwner() public setupTestDrop(10) {
+    address minter = address(0x32402);
+    vm.startPrank(DEFAULT_OWNER_ADDRESS);
+    address[] memory airdrop = new address[](1);
+    airdrop[0] = minter;
+    erc721Drop.adminMintAirdrop(airdrop);
+    vm.stopPrank();
 
-  //   vm.prank(address(0x1));
-  //   HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
-  //   vm.expectRevert("ERC721: not approved sender");
-  //   erc721Enforcer.burn(FIRST_TOKEN_ID);
-  // }
+    vm.prank(address(0x1));
+    HolographERC721 erc721Enforcer = HolographERC721(payable(address(erc721Drop)));
+    vm.expectRevert("ERC721: not approved sender");
+    erc721Enforcer.burn(FIRST_TOKEN_ID);
+  }
 
-  // // TODO: Add test burn failure state for users that don't own the token
+  // TODO: Add test burn failure state for users that don't own the token
 
-  // function test_EIP165() public setupTestDrop(10) {
-  //   require(erc721Drop.supportsInterface(0x01ffc9a7), "supports 165");
-  //   require(erc721Drop.supportsInterface(0x80ac58cd), "supports 721");
-  //   require(erc721Drop.supportsInterface(0x5b5e139f), "supports 721-metdata");
-  //   require(erc721Drop.supportsInterface(0x2a55205a), "supports 2981");
-  //   require(!erc721Drop.supportsInterface(0x0000000), "doesnt allow non-interface");
-  // }
+  function test_EIP165() public setupTestDrop(10) {
+    require(erc721Drop.supportsInterface(0x01ffc9a7), "supports 165");
+    require(erc721Drop.supportsInterface(0x80ac58cd), "supports 721");
+    require(erc721Drop.supportsInterface(0x5b5e139f), "supports 721-metdata");
+    require(erc721Drop.supportsInterface(0x2a55205a), "supports 2981");
+    require(!erc721Drop.supportsInterface(0x0000000), "doesnt allow non-interface");
+  }
 
-  // function test_Fallback() public setupTestDrop(10) {
-  //   bytes4 functionSignature = bytes4(keccak256("nonExistentFunction()"));
-  //   (bool success, bytes memory result) = address(erc721Drop).call(abi.encodeWithSelector(functionSignature));
+  function test_Fallback() public setupTestDrop(10) {
+    bytes4 functionSignature = bytes4(keccak256("nonExistentFunction()"));
+    (bool success, bytes memory result) = address(erc721Drop).call(abi.encodeWithSelector(functionSignature));
 
-  //   require(!success, "Function call should fail");
-  //   console.log(string(result));
-  // }
+    require(!success, "Function call should fail");
+    console.log(string(result));
+  }
 
   // TEST HELPERS
   function getDeploymentConfig(
