@@ -140,6 +140,8 @@ contract HolographTreasury is Admin, Initializable, HolographTreasuryInterface {
    */
   bytes32 constant _registrySlot = 0xce8e75d5c5227ce29a4ee170160bb296e5dea6934b80a9bd723f7ef1e7c850e7;
 
+  uint256 public holographMintFee = 1000000; // $1.00 USD (6 decimal places)
+
   /**
    * @dev Constructor is left empty and init is used instead
    */
@@ -270,6 +272,14 @@ contract HolographTreasury is Admin, Initializable, HolographTreasuryInterface {
     assembly {
       registry := sload(_registrySlot)
     }
+  }
+
+  /**
+   * @notice Allows admin to update the Holograph Protocol mint fee
+   * @dev Can only be called by the admin
+   */
+  function setMintFee(uint256 newMintFee) external onlyAdmin {
+    holographMintFee = newMintFee;
   }
 
   /**

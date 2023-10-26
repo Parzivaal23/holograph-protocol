@@ -104,6 +104,8 @@ pragma solidity 0.8.13;
 import {ERC721H} from "../../abstract/ERC721H.sol";
 import {NonReentrant} from "../../abstract/NonReentrant.sol";
 
+import {HolographTreasury} from "../../HolographTreasury.sol";
+
 import {HolographERC721Interface} from "../../interface/HolographERC721Interface.sol";
 import {HolographerInterface} from "../../interface/HolographerInterface.sol";
 import {HolographInterface} from "../../interface/HolographInterface.sol";
@@ -143,6 +145,11 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
   IDropsPriceOracle public constant dropsPriceOracle = IDropsPriceOracle(0x34D76b88BC848aaFD11CA609cC6ab6fEEC638A51);
 
   /**
+   * @dev Address of the Holograph Treasury
+   */
+  HolographTreasury public holographTreasury;
+
+  /**
    * @dev Internal reference used for minting incremental token ids.
    */
   uint224 private _currentTokenId;
@@ -151,9 +158,6 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
    * @dev HOLOGRAPH transfer helper address for auto-approval
    */
   address public erc721TransferHelper;
-
-  /// @notice Holograph Mint Fee
-  uint256 public constant HOLOGRAPH_MINT_FEE = 1000000; // $1.00 USD (6 decimal places)
 
   /// @dev Gas limit for transferring funds
   uint256 private constant STATIC_GAS_LIMIT = 210_000;
@@ -264,6 +268,12 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
       IMetadataRenderer(initializer.metadataRenderer).initializeWithData(initializer.metadataRendererInit);
     }
 
+    // holographTreasury = HolographTreasury(
+    //   payable(HolographInterface(HolographerInterface(holographer()).getHolograph()).getTreasury())
+    // );
+
+    holographTreasury = HolographTreasury(payable(0x90E5D6Da4AA4748CEe7e4cfF94Ea591A68bD598f));
+
     setStatus(1);
 
     return _init(initPayload);
@@ -328,13 +338,13 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
   /// @notice The Holograph fee is a flat fee for each mint in USD
   /// @dev Gets the Holograph protocol fee for amount of mints in USD
   function getHolographFeeUsd(uint256 quantity) public view returns (uint256 fee) {
-    fee = HOLOGRAPH_MINT_FEE * quantity;
+    fee = holographTreasury.holographMintFee() * quantity;
   }
 
   /// @notice The Holograph fee is a flat fee for each mint in wei after conversion
   /// @dev Gets the Holograph protocol fee for amount of mints in wei
   function getHolographFeeWei(uint256 quantity) public view returns (uint256) {
-    return _usdToWei(HOLOGRAPH_MINT_FEE * quantity);
+    return _usdToWei(holographTreasury.holographMintFee() * quantity);
   }
 
   /**
@@ -410,11 +420,11 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
     uint256 quantity
   ) external payable nonReentrant canMintTokens(quantity) onlyPublicSaleActive returns (uint256) {
     uint256 salePrice = _usdToWei(salesConfig.publicSalePrice);
-    uint256 holographMintFeeInWei = _usdToWei(HOLOGRAPH_MINT_FEE);
+    uint256 holographMintFeeInWei = _usdToWei(holographTreasury.holographMintFee());
 
     if (msg.value < (salePrice + holographMintFeeInWei) * quantity) {
       // The error will display the wrong price that was sent in USD
-      revert Purchase_WrongPrice((salesConfig.publicSalePrice + HOLOGRAPH_MINT_FEE) * quantity);
+      revert Purchase_WrongPrice((salesConfig.publicSalePrice + holographTreasury.holographMintFee()) * quantity);
     }
     uint256 remainder = msg.value - (salePrice * quantity);
 
