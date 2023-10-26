@@ -131,8 +131,6 @@ contract HolographDropERC721Test is Test {
       Vm.Log[] memory entries = vm.getRecordedLogs();
       address newDropAddress = address(uint160(uint256(entries[1].topics[1])));
 
-      console.log("newDropAddress", newDropAddress);
-
       // Connect the drop implementation to the drop proxy address
       erc721Drop = HolographDropERC721(payable(newDropAddress));
     }

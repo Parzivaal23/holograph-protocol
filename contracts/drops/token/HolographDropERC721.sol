@@ -153,7 +153,7 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
   address public erc721TransferHelper;
 
   /// @notice Holograph Mint Fee
-  uint256 public constant HOLOGRAPH_MINT_FEE = 100000; // $0.10 USD (6 decimal places)
+  uint256 public constant HOLOGRAPH_MINT_FEE = 1000000; // $1.00 USD (6 decimal places)
 
   /// @dev Gas limit for transferring funds
   uint256 private constant STATIC_GAS_LIMIT = 210_000;

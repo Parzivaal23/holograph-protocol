@@ -25,13 +25,13 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
 
   let holographGenesis: Contract = await hre.ethers.getContract('HolographGenesis', deployer);
 
-  if (!(await holographGenesis.isApprovedDeployer('0xa198FA5db682a2A828A90b42D3Cd938DAcc01ADE'))) {
-    let tx = await holographGenesis.approveDeployer('0xa198FA5db682a2A828A90b42D3Cd938DAcc01ADE', true, {
+  if (!(await holographGenesis.isApprovedDeployer('0x21Ab3Aa7053A3615E02d4aC517B7075b45BF524f'))) {
+    let tx = await holographGenesis.approveDeployer('0x21Ab3Aa7053A3615E02d4aC517B7075b45BF524f', true, {
       ...(await txParams({
         hre,
         from: deployer,
         to: holographGenesis,
-        data: holographGenesis.populateTransaction.approveDeployer('0xa198FA5db682a2A828A90b42D3Cd938DAcc01ADE', true),
+        data: holographGenesis.populateTransaction.approveDeployer('0x21Ab3Aa7053A3615E02d4aC517B7075b45BF524f', true),
       })),
     });
     let receipt = await tx.wait();
