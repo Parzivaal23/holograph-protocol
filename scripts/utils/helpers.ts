@@ -422,8 +422,8 @@ const getGasPrice = async function (): Promise<GasParams> {
     // TODO: Disabled for now because it is causing the tx to never go through
     while (gasPrice.gt(global.__maxGasPrice) || bribe.gt(global.__maxGasBribe)) {
       await gasService.wait(1);
-      //      gasPrice = gasPricing.gasPrice!.mul(global.__gasPriceMultiplier).div(BigNumber.from('10000'));
-      //      bribe = gasPricing.isEip1559 ? gasPrice.sub(gasPricing.nextBlockFee!) : BigNumber.from('0');
+      // gasPrice = gasPricing.gasPrice!.mul(global.__gasPriceMultiplier).div(BigNumber.from('10000'));
+      // bribe = gasPricing.isEip1559 ? gasPrice.sub(gasPricing.nextBlockFee!) : BigNumber.from('0');
     }
 
     if (gasPricing.isEip1559) {
@@ -443,6 +443,7 @@ const getGasPrice = async function (): Promise<GasParams> {
       };
     }
   } else {
+    console.log(`WARNING: No gas price set. Defaulting to 25 gwei`);
     return {
       gasPrice: BigNumber.from('25000000000'), // This can be updated to manually set a gas price. Defaulting to 25 gwei for now
       type: 0,
@@ -473,15 +474,29 @@ const txParams = async function ({
   if (typeof to !== 'string') {
     to = (to as Contract).address;
   }
+
+  // Determine the gas limit
+  let updatedGasLimit;
+
+  // Check if 'gasLimit' is provided and is truthy
+  if (gasLimit) {
+    // Check if global multiplier exists
+    if ('__gasLimitMultiplier' in global) {
+      updatedGasLimit = gasLimit.mul(global.__gasLimitMultiplier).div(BigNumber.from('10000'));
+    } else {
+      updatedGasLimit = gasLimit;
+    }
+  } else {
+    // Estimate the gas limit
+    updatedGasLimit = await getGasLimit(hre, from as string, to as string, data, BigNumber.from(value), true);
+  }
+
+  console.log(`Updated gas limit that will be used: ${updatedGasLimit}`);
+
   let output: TransactionParamsOutput = {
     from: from as string,
     value: BigNumber.from(value),
-    gasLimit: gasLimit
-      ? '__gasLimitMultiplier' in global
-        ? gasLimit.mul(global.__gasLimitMultiplier).div(BigNumber.from('10000'))
-        : gasLimit
-      : await getGasLimit(hre, from as string, to as string, data, BigNumber.from(value), true),
-    ...(await getGasPrice()),
+    gasLimit: updatedGasLimit,
     nonce: nonce === undefined ? global.__txNonce[hre.networkName] : nonce,
   };
   if (nonce === undefined) {
@@ -509,8 +524,6 @@ const genesisDeployHelper = async function (
       // we do nothing
     }
   }
-
-  console.log(`Holograph Genesis address: ${holographGenesis.address}`);
 
   let contract: any = await ethers.getContractOrNull(name);
   if (contract == null) {

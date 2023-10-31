@@ -46,7 +46,7 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
   IDropsPriceOracle public constant dropsPriceOracle = IDropsPriceOracle(0x34D76b88BC848aaFD11CA609cC6ab6fEEC638A51);
 
   /**
-   * @dev Address of the Holograph Treasury
+   * @dev Instance of the Holograph Treasury
    */
   HolographTreasury public holographTreasury;
 
@@ -169,12 +169,6 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
       IMetadataRenderer(initializer.metadataRenderer).initializeWithData(initializer.metadataRendererInit);
     }
 
-    // holographTreasury = HolographTreasury(
-    //   payable(HolographInterface(HolographerInterface(holographer()).getHolograph()).getTreasury())
-    // );
-
-    holographTreasury = HolographTreasury(payable(0x90E5D6Da4AA4748CEe7e4cfF94Ea591A68bD598f));
-
     setStatus(1);
 
     return _init(initPayload);
@@ -238,14 +232,14 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
 
   /// @notice The Holograph fee is a flat fee for each mint in USD
   /// @dev Gets the Holograph protocol fee for amount of mints in USD
-  function getHolographFeeUsd(uint256 quantity) public view returns (uint256 fee) {
-    fee = holographTreasury.holographMintFee() * quantity;
+  function getHolographFeeUsd(uint256 quantity) public returns (uint256 fee) {
+    fee = _getHolographTreasury().holographMintFee() * quantity;
   }
 
   /// @notice The Holograph fee is a flat fee for each mint in wei after conversion
   /// @dev Gets the Holograph protocol fee for amount of mints in wei
-  function getHolographFeeWei(uint256 quantity) public view returns (uint256) {
-    return _usdToWei(holographTreasury.holographMintFee() * quantity);
+  function getHolographFeeWei(uint256 quantity) public returns (uint256) {
+    return _usdToWei(_getHolographTreasury().holographMintFee() * quantity);
   }
 
   /**
@@ -321,11 +315,11 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
     uint256 quantity
   ) external payable nonReentrant canMintTokens(quantity) onlyPublicSaleActive returns (uint256) {
     uint256 salePrice = _usdToWei(salesConfig.publicSalePrice);
-    uint256 holographMintFeeInWei = _usdToWei(holographTreasury.holographMintFee());
+    uint256 holographMintFeeInWei = _usdToWei(_getHolographTreasury().holographMintFee());
 
     if (msg.value < (salePrice + holographMintFeeInWei) * quantity) {
       // The error will display the wrong price that was sent in USD
-      revert Purchase_WrongPrice((salesConfig.publicSalePrice + holographTreasury.holographMintFee()) * quantity);
+      revert Purchase_WrongPrice((salesConfig.publicSalePrice + _getHolographTreasury().holographMintFee()) * quantity);
     }
     uint256 remainder = msg.value - (salePrice * quantity);
 
@@ -598,14 +592,26 @@ contract HolographDropERC721 is NonReentrant, ERC721H, IHolographDropERC721 {
     }
   }
 
+  /**
+   * @notice Internal function to get the HolographTreasury instance
+   * @dev This is used to get the HolographTreasury instance from the Holographer
+   * @return HolographTreasury instance
+   */
+  function _getHolographTreasury() internal returns (HolographTreasury) {
+    if (address(holographTreasury) == address(0)) {
+      holographTreasury = HolographTreasury(
+        payable(HolographInterface(HolographerInterface(holographer()).getHolograph()).getTreasury())
+      );
+    }
+    return holographTreasury;
+  }
+
   function _payoutHolographFee(uint256 quantity) internal {
     // Transfer protocol mint fee to recipient address
     uint256 holographMintFeeWei = getHolographFeeWei(quantity);
 
-    // Payout Holograph fee
-    address payable holographFeeRecipient = payable(
-      HolographInterface(HolographerInterface(holographer()).getHolograph()).getTreasury()
-    );
+    // Payout Holograph fee using the cached (or fetched) instance
+    address payable holographFeeRecipient = payable(address(_getHolographTreasury()));
 
     (bool success, ) = holographFeeRecipient.call{value: holographMintFeeWei, gas: STATIC_GAS_LIMIT}("");
     if (!success) {
