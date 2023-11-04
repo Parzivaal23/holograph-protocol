@@ -189,7 +189,7 @@ const MultisigAwareTx = async (
     // deployer is not admin
     // check if holograph is admin
     console.log(`Deployer is not admin of ${contractName}`);
-    console.log(`Admin of ${contractName} is ${admin}`);
+    console.log(`Admin of ${contractName} at ${contract.address} is ${admin}`);
     const holograph = await hre.ethers.getContract('Holograph', deployer);
     console.log(`Holograph Contract address is ${holograph.address}`);
 
