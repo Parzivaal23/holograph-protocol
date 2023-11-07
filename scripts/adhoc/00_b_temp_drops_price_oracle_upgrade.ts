@@ -154,6 +154,34 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
     }
   }
 
+  if (network.key == 'mantleTestnet') {
+    hre.deployments.log('Checking token price ratio on mantle testnet');
+    const priceOracleContract = (
+      (await hre.ethers.getContract('DropsPriceOracleMantleTestnet', deployer)) as Contract
+    ).attach(futureDropsPriceOracleProxyAddress);
+    if ((await priceOracleContract.getTokenPriceRatio()).eq(BigNumber.from('0'))) {
+      hre.deployments.log('price ratio not set');
+      const priceOracleContractTx = await MultisigAwareTx(
+        hre,
+        deployer,
+        'DropsPriceOracleMantleTestnet',
+        priceOracleContract,
+        await priceOracleContract.populateTransaction.setTokenPriceRatio(BigNumber.from('1000000000000000000'), {
+          ...(await txParams({
+            hre,
+            from: deployer,
+            to: priceOracleContract,
+            data: priceOracleContract.populateTransaction.setTokenPriceRatio(BigNumber.from('1000000000000000000')),
+          })),
+        })
+      );
+      hre.deployments.log('Transaction hash:', priceOracleContractTx.hash);
+      await priceOracleContractTx.wait();
+    } else {
+      hre.deployments.log('price ratio is set');
+    }
+  }
+
   // Verify
   let contracts: string[] = ['DropsPriceOracleProxy', targetDropsPriceOracle];
   for (let i: number = 0, l: number = contracts.length; i < l; i++) {
