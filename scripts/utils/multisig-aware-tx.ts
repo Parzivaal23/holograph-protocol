@@ -194,7 +194,6 @@ const MultisigAwareTx = async (
     console.log(`Holograph Contract address is ${holograph.address}`);
 
     if (admin === global.__holographAddress || admin === holograph.address.toLowerCase()) {
-      // const holograph: Contract = await hre.ethers.getContractAt('Admin', holograph.address, deployer);
       const holographAdmin: string = (await holograph.admin()).toLowerCase();
       // check if deployer is admin of holograph
       if (holographAdmin === deployer.address.toLowerCase()) {
@@ -320,6 +319,7 @@ const MultisigAwareTx = async (
             },
           } as MultisigHandler;
         } else {
+          console.log(`Admin of ${contractName} is ${admin}. Multisig is ${network.protocolMultisig}`);
           throw new Error('Neither deployer, multisig, nor Holograph are admin of this contract');
         }
       }
