@@ -450,8 +450,8 @@ const config: HardhatUserConfig = {
         network: 'mantle',
         chainId: 5000,
         urls: {
-          apiURL: 'https://explorer.mantle.xyz/api',
-          browserURL: 'https://explorer.mantle.xyz',
+          apiURL: 'https://api.routescan.io/v2/network/mainnet/evm/5000/etherscan',
+          browserURL: 'https://mantlescan.info',
         },
       },
       {
@@ -476,6 +476,22 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: 'https://api-goerli.basescan.org/api',
           browserURL: 'https://goerli.basescan.org',
+        },
+      },
+      {
+        network: 'zora',
+        chainId: 7777777,
+        urls: {
+          apiURL: 'https://explorer.zora.energy/api',
+          browserURL: 'https://explorer.zora.energy',
+        },
+      },
+      {
+        network: 'zoraTestnetGoerli',
+        chainId: 77777771,
+        urls: {
+          apiURL: 'https://testnet.explorer.zora.energy/api',
+          browserURL: 'https://testnet.explorer.zora.energy',
         },
       },
     ],
