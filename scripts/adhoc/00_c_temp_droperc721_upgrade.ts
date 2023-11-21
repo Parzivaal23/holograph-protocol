@@ -11,8 +11,8 @@ import {
   genesisDeriveFutureAddress,
   zeroAddress,
   askQuestion,
-} from '../scripts/utils/helpers';
-import { MultisigAwareTx } from '../scripts/utils/multisig-aware-tx';
+} from '../utils/helpers';
+import { MultisigAwareTx } from '../utils/multisig-aware-tx';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
 
 const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {

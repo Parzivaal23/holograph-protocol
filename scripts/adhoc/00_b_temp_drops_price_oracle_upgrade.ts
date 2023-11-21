@@ -10,8 +10,8 @@ import {
   generateInitCode,
   genesisDeriveFutureAddress,
   zeroAddress,
-} from '../scripts/utils/helpers';
-import { MultisigAwareTx } from '../scripts/utils/multisig-aware-tx';
+} from '../utils/helpers';
+import { MultisigAwareTx } from '../utils/multisig-aware-tx';
 import { NetworkType, networks } from '@holographxyz/networks';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
 import { Environment, getEnvironment } from '@holographxyz/environment';

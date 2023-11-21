@@ -12,10 +12,10 @@ import {
   getGasPrice,
   getGasLimit,
   txParams,
-} from '../scripts/utils/helpers';
-import { HolographERC721Event, ConfigureEvents } from '../scripts/utils/events';
+} from '../utils/helpers';
+import { HolographERC721Event, ConfigureEvents } from '../utils/events';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
-import { MultisigAwareTx } from '../scripts/utils/multisig-aware-tx';
+import { MultisigAwareTx } from '../utils/multisig-aware-tx';
 import Web3 from 'web3';
 
 const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {

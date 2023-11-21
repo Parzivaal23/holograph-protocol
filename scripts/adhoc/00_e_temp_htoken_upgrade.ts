@@ -17,9 +17,9 @@ import {
   genesisDeriveFutureAddress,
   remove0x,
   txParams,
-} from '../scripts/utils/helpers';
-import { MultisigAwareTx } from '../scripts/utils/multisig-aware-tx';
-import { HolographERC20Event, ConfigureEvents, AllEventsEnabled } from '../scripts/utils/events';
+} from '../utils/helpers';
+import { MultisigAwareTx } from '../utils/multisig-aware-tx';
+import { HolographERC20Event, ConfigureEvents, AllEventsEnabled } from '../utils/events';
 import { NetworkType, Network, networks } from '@holographxyz/networks';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
 
