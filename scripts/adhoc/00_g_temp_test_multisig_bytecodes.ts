@@ -17,11 +17,11 @@ import {
   generateErc20Config,
   Signature,
   StrictECDSA,
-} from '../scripts/utils/helpers';
-import { MultisigAwareTx } from '../scripts/utils/multisig-aware-tx';
+} from '../utils/helpers';
+import { MultisigAwareTx } from '../utils/multisig-aware-tx';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
-import { HolographOperator, HolographOperatorProxy } from '../typechain-types';
-import { ConfigureEvents } from '../scripts/utils/events';
+import { HolographOperator, HolographOperatorProxy } from '../../typechain-types';
+import { ConfigureEvents } from '../utils/events';
 
 interface HTokenData {
   primaryNetwork: Network;
