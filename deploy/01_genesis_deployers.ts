@@ -4,7 +4,6 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { DeployFunction, Deployment } from '@holographxyz/hardhat-deploy-holographed/types';
 import { LeanHardhatRuntimeEnvironment, Signature, StrictECDSA, hreSplit, txParams } from '../scripts/utils/helpers';
-import { SuperColdStorageSigner } from 'super-cold-storage-signer';
 
 import { Client, Constants } from 'gridplus-sdk';
 import { question } from 'readline-sync';
@@ -59,112 +58,70 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
   let holographGenesis: Contract = await hre.ethers.getContract('HolographGenesis', deployer.toString());
   console.log(`Using HolohraphGenesis contract at ${holographGenesis.address}`);
 
-  // if (!(await holographGenesis.isApprovedDeployer('0x724dBA8429CDBFEA28531aEBE9D54Be73e2c25D1'))) {
-  // Prepare transaction
-  const txRequest = await holographGenesis.populateTransaction.approveDeployer(
-    '0x724dBA8429CDBFEA28531aEBE9D54Be73e2c25D1',
-    true
-  );
+  if (!(await holographGenesis.isApprovedDeployer('0x724dBA8429CDBFEA28531aEBE9D54Be73e2c25D1'))) {
+    // Prepare transaction
+    const txRequest = await holographGenesis.populateTransaction.approveDeployer(
+      '0x724dBA8429CDBFEA28531aEBE9D54Be73e2c25D1',
+      true
+    );
 
-  // Manually set nonce, gasLimit, and gasPrice
-  const nonce = await hre.ethers.provider.getTransactionCount(deployer.toString());
+    // Use txParams to automatically handle nonce, gasLimit, and gasPrice
+    const txParameters = await txParams({
+      hre,
+      from: deployer.toString(),
+      to: holographGenesis.address,
+      data: txRequest.data,
+    });
 
-  console.log(nonce);
-  const gasPrice = await hre.ethers.provider.getGasPrice();
+    // Update txRequest with the parameters from txParams
+    txRequest.nonce = txParameters.nonce;
+    txRequest.gasPrice = txParameters.gasPrice as BigNumber;
+    txRequest.gasLimit = txParameters.gasLimit as BigNumber;
 
-  console.log(gasPrice);
-  const gasEstimate = await hre.ethers.provider.estimateGas(txRequest);
+    // Remove 'from' field before serialization
+    delete txRequest.from;
 
-  console.log(gasEstimate);
+    // Serialize the transaction
+    const serializedTx = hre.ethers.utils.serializeTransaction(txRequest);
 
-  // Update txRequest with these values
-  txRequest.nonce = nonce;
-  txRequest.gasPrice = BigNumber.from('2000000000');
-  txRequest.gasLimit = BigNumber.from('1000000');
+    // Prepare the signing request for Lattice1
+    const req = {
+      data: {
+        signerPath: DEFAULT_ETH_DERIVATION,
+        curveType: Constants.SIGNING.CURVES.SECP256K1,
+        hashType: Constants.SIGNING.HASHES.KECCAK256,
+        encodingType: Constants.SIGNING.ENCODINGS.EVM,
+        payload: serializedTx, // Serialized transaction data
+      },
+    };
 
-  // Remove 'from' field before serialization
-  delete txRequest.from;
+    console.log('Serialized Transaction:', serializedTx);
+    console.log('Signing Request:', req);
 
-  // const params = await txParams({
-  //   hre,
-  //   from: deployer.toString(),
-  //   to: holographGenesis,
-  //   data: holographGenesis.populateTransaction.approveDeployer('0x724dBA8429CDBFEA28531aEBE9D54Be73e2c25D1', true),
-  // });
+    // Request Lattice1 to sign the transaction
+    const signature = await client.sign(req);
 
-  // const txRequest = {
-  //   nonce: params.nonce,
-  //   gasPrice: params.gasPrice,
-  //   gasLimit: params.gasLimit,
-  // } as UnsignedTransaction;
+    console.log(signature.sig);
+    const r = `0x${signature.sig.r.toString('hex')}`;
+    const s = `0x${signature.sig.s.toString('hex')}`;
+    const v = `0x${signature.sig.v.toString('hex')}`;
 
-  // Serialize the transaction
-  const serializedTx = hre.ethers.utils.serializeTransaction(txRequest);
+    // Combine r, s, and v into one signature string
+    const combinedSignature = `${r}${s.slice(2)}${v.slice(2)}`;
 
-  // Prepare the signing request for Lattice1
-  const req = {
-    data: {
-      signerPath: DEFAULT_ETH_DERIVATION,
-      curveType: Constants.SIGNING.CURVES.SECP256K1,
-      hashType: Constants.SIGNING.HASHES.KECCAK256,
-      encodingType: Constants.SIGNING.ENCODINGS.EVM,
-      payload: serializedTx, // Serialized transaction data
-    },
-  };
+    // Combine the serialized transaction with the signature
+    const signedTx = hre.ethers.utils.serializeTransaction(txRequest, combinedSignature);
 
-  console.log('Serialized Transaction:', serializedTx);
-  console.log('Signing Request:', req);
+    console.log(`Signed Transaction: ${signedTx}`);
 
-  // Request Lattice1 to sign the transaction
-  const signature = await client.sign(req);
+    // Send the signed transaction
+    const txResponse = await hre.ethers.provider.sendTransaction(signedTx);
 
-  console.log(signature.sig);
-  const r = `0x${signature.sig.r.toString('hex')}`;
-  const s = `0x${signature.sig.s.toString('hex')}`;
-  const v = `0x${signature.sig.v.toString('hex')}`;
+    console.log(txResponse);
+    const receipt = await txResponse.wait();
 
-  // Combine r, s, and v into one signature string
-  const combinedSignature = `${r}${s.slice(2)}${v.slice(2)}`;
-
-  // Combine the serialized transaction with the signature
-  const signedTx = hre.ethers.utils.serializeTransaction(txRequest, combinedSignature);
-
-  console.log(`Signed Transaction: ${signedTx}`);
-
-  // Send the signed transaction
-  const txResponse = await hre.ethers.provider.sendTransaction(signedTx);
-
-  console.log(txResponse);
-  const receipt = await txResponse.wait();
-
-  console.log(receipt);
-  // }
-
-  // const accounts = await hre.ethers.getSigners();
-  // let deployer: SignerWithAddress | SuperColdStorageSigner = accounts[0];
-  // if (global.__superColdStorage) {
-  //   // address, domain, authorization, ca
-  //   const coldStorage = global.__superColdStorage;
-  //   deployer = new SuperColdStorageSigner(
-  //     coldStorage.address,
-  //     'https://' + coldStorage.domain,
-  //     coldStorage.authorization,
-  //     deployer.provider,
-  //     coldStorage.ca
-  //   );
-  // }
-  // let holographGenesis: Contract = await hre.ethers.getContract('HolographGenesis', deployer);
-  // if (!(await holographGenesis.isApprovedDeployer('0xa198FA5db682a2A828A90b42D3Cd938DAcc01ADE'))) {
-  //   let tx = await holographGenesis.approveDeployer('0xa198FA5db682a2A828A90b42D3Cd938DAcc01ADE', true, {
-  //     ...(await txParams({
-  //       hre,
-  //       from: deployer,
-  //       to: holographGenesis,
-  //       data: holographGenesis.populateTransaction.approveDeployer('0xa198FA5db682a2A828A90b42D3Cd938DAcc01ADE', true),
-  //     })),
-  //   });
-  //   let receipt = await tx.wait();
-  // }
+    console.log(receipt);
+  }
 };
 
 export default func;
