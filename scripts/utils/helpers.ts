@@ -510,7 +510,7 @@ const genesisDeployHelper = async function (
     try {
       holographGenesis = await deployments.get('HolographGenesis');
     } catch (ex: any) {
-      // we do nothing
+      console.log(`Not deploying ${name} because HolographGenesis is not deployed.`);
     }
   }
 

@@ -1,4 +1,6 @@
 declare var global: any;
+import path from 'path';
+
 import { BigNumber, Contract, UnsignedTransaction } from 'ethers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
@@ -18,6 +20,7 @@ import { DEFAULT_ETH_DERIVATION } from 'gridplus-sdk/dist/constants';
 require('dotenv').config();
 
 const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
+  console.log(`Starting deploy script: ${path.basename(__filename)}`);
   let { hre, hre2 } = await hreSplit(hre1, global.__companionNetwork);
   const { client, deployer } = await initGridPlusClient();
 

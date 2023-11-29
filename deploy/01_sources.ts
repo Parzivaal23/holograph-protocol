@@ -1,4 +1,5 @@
 declare var global: any;
+import path from 'path';
 import fs from 'fs';
 import Web3 from 'web3';
 import { BigNumber, BytesLike } from 'ethers';
@@ -61,6 +62,8 @@ const GWEI: BigNumber = BigNumber.from('1000000000');
 const ZERO: BigNumber = BigNumber.from('0');
 
 const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
+  console.log(`Starting deploy script: ${path.basename(__filename)}`);
+
   let { hre, hre2 } = await hreSplit(hre1, global.__companionNetwork);
   const accounts = await hre.ethers.getSigners();
   let deployer: SignerWithAddress | SuperColdStorageSigner = accounts[0];
@@ -297,6 +300,7 @@ const func: DeployFunction = async function (hre1: HardhatRuntimeEnvironment) {
 
   const dryRun = process.env.DRY_RUN;
   if ((dryRun && dryRun === 'true') || dryRun === true) {
+    hre.deployments.log('Dry run complete, exiting.');
     process.exit();
   }
 

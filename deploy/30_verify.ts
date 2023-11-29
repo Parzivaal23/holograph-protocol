@@ -1,4 +1,6 @@
 declare var global: any;
+import path from 'path';
+
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from '@holographxyz/hardhat-deploy-holographed/types';
 import { NetworkType, networks } from '@holographxyz/networks';
@@ -6,6 +8,8 @@ import { Environment, getEnvironment } from '@holographxyz/environment';
 import { SuperColdStorageSigner } from 'super-cold-storage-signer';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+  console.log(`Starting deploy script: ${path.basename(__filename)}`);
+
   const accounts = await hre.ethers.getSigners();
   let deployer: SignerWithAddress | SuperColdStorageSigner = accounts[0];
 

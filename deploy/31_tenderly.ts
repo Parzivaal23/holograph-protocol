@@ -1,4 +1,6 @@
 declare var global: any;
+import path from 'path';
+
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { DeployFunction } from '@holographxyz/hardhat-deploy-holographed/types';
 import { NetworkType, Networks, networks } from '@holographxyz/networks';
@@ -14,6 +16,8 @@ function mapFullKeyToShortKey(networks: Networks, fullKey: string) {
 }
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
+  console.log(`Starting deploy script: ${path.basename(__filename)}`);
+
   /*
   const currentNetworkType: NetworkType = networks[hre.network.name].type;
   if (currentNetworkType == NetworkType.local) {
