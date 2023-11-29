@@ -46,6 +46,10 @@ import { PreTest } from '../../test/utils/index';
 import { GasService } from './gas-service';
 import { GasPricing } from './gas';
 
+import { Client } from 'gridplus-sdk';
+import { question } from 'readline-sync';
+import { generateAppSecret } from 'gridplus-sdk/dist/util';
+
 export type DeploymentConfigStruct = {
   contractType: BytesLike;
   chainType: BigNumberish;
@@ -940,6 +944,44 @@ function askQuestion(query: string): Promise<string> {
   });
 }
 
+async function initGridPlusClient(): Promise<{ client: Client; deployer: string }> {
+  // Define types for your environment variables if they are not already defined elsewhere
+  const deviceID: string = process.env.GRIDPLUS_DEVICE_ID ?? '';
+  const password: string = process.env.GRIDPLUS_PASSWORD ?? '';
+  const appName: string = process.env.GRIDPLUS_APP_NAME ?? '';
+  let client: Client | null = null;
+  let deployer: string | null = null;
+
+  if (!client) {
+    const appSecret = generateAppSecret(deviceID, password, appName);
+    client = new Client({
+      name: appName,
+      privKey: appSecret,
+    });
+
+    const isPaired: boolean = await client.connect(deviceID);
+    if (!isPaired) {
+      console.log('Not paired with Lattice1. Please pair now.');
+      const secret: string = question('Enter pairing secret: ');
+      await client.pair(secret);
+    }
+
+    const addresses: string[] = (
+      await client.getAddresses({
+        startPath: [0x80000000 + 44, 0x80000000 + 60, 0x80000000, 0, 0],
+        n: 1,
+      })
+    ).map((address) => address.toString('hex'));
+    deployer = addresses[0];
+  }
+
+  if (!client || !deployer) {
+    throw new Error('Failed to initialize GridPlus client');
+  }
+
+  return { client, deployer };
+}
+
 export {
   web3,
   executeJobGas,
@@ -981,4 +1023,5 @@ export {
   HASH,
   gweiToWei,
   askQuestion,
+  initGridPlusClient,
 };
