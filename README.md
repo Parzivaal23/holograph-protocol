@@ -1,7 +1,7 @@
 <div align="center">
   <a href="https://holograph.xyz"><img alt="Holograph" src="https://user-images.githubusercontent.com/21043504/188220186-9c7f55e0-143a-41b4-a6b8-90e8bd54bfd9.png" width=600></a>
   <br />
-  <h1>Holograph Protocol</h1>
+  <h1>Holograph Protocol V1 [Deprecated]</h1>
 </div>
 <p align="center">
 </p>
@@ -21,6 +21,11 @@
 ## Description
 
 Holograph provides infrastructure for digital asset tokenization. Holograph enables asset issuers to mint holographic assets, which are fungible and non-fungible tokens that exist natively on any public or private blockchain.
+
+## Version
+
+The Holograph Protocol has been upgraded to [version v2](https://github.com/holographxyz/holograph-protocol/tree/mainnet)
+
 
 ## Specification
 
