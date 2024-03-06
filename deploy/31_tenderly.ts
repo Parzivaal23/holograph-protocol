@@ -25,7 +25,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // let deployer: SignerWithAddress = accounts[0];
   // const network = networks[hre.network.name];
   // const environment: Environment = getEnvironment();
-  // const currentNetworkType: NetworkType = network.type;
   // const definedOracleNames = {
   //   avalanche: 'Avalanche',
   //   avalancheTestnet: 'AvalancheTestnet',
@@ -63,6 +62,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   //   'HolographERC20',
   //   'HolographERC721',
   //   'HolographDropERC721',
+  //   'HolographDropERC721V2',
   //   'HolographDropERC721Proxy',
   //   'HolographFactory',
   //   'HolographFactoryProxy',
@@ -93,7 +93,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   // // Reference to the issue below to open an issue or PR for hardhat-tenderly to fix this
   // // Instead of using a private object, it should use the networks object defined in hardhat.config.ts
   // // chainId = NETWORK_NAME_CHAIN_ID_MAP[network.toLowerCase()].toString();
-  // const network = mapFullKeyToShortKey(networks, hre.network.name);
   // tenderly.env.hardhatArguments.network = network;
   // tenderly.env.network.name = network;
   // hre.deployments.log('Verifying contracts on Tenderly...');
