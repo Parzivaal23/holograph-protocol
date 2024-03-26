@@ -205,7 +205,7 @@ _Submitted by 0xA5DF, also found by 0x52_
 
 [HolographOperator.sol#L415](https://github.com/code-423n4/2022-10-holograph/blob/f8c2eae866280a1acfdc8a8352401ed031be1373/contracts/HolographOperator.sol#L415)<br>
 
-When a beaming job is executed, there's a requirement that the gas left would be at least as the `gasLimit` set by the user.
+When a bridging job is executed, there's a requirement that the gas left would be at least as the `gasLimit` set by the user.
 Given that there's no limit on the `gasLimit` the user can set, a user can set the `gasLimit` to amount that's higher than the block gas limit on the dest chain, causing the operator to fail to execute the job.
 
 ### Impact
@@ -280,7 +280,7 @@ _Submitted by 0xA5DF, also found by cryptphi, Jeiwan, and Picodes_
 [HolographOperator.sol#L593-L596](https://github.com/code-423n4/2022-10-holograph/blob/f8c2eae866280a1acfdc8a8352401ed031be1373/contracts/HolographOperator.sol#L593-L596)<br>
 [LayerZeroModule.sol#L277-L294](https://github.com/code-423n4/2022-10-holograph/blob/f8c2eae866280a1acfdc8a8352401ed031be1373/contracts/module/LayerZeroModule.sol#L277-L294)<br>
 
-During the beaming process the user compensates the operator for the gas he has to pay by sending some source-chain-native-tokens via `hToken`.<br>
+During the bridging process the user compensates the operator for the gas he has to pay by sending some source-chain-native-tokens via `hToken`.<br>
 The amount he has to pay is determined according to the `gasPrice` set by the user, which is supposed to be the maximum gas price to be used on dest chain (therefore predicting the max gas fee the operator would pay and paying him the same value in src chain native tokens).<br>
 However, in case the user sets a low price (as low as 1 wei) the operator can't skip the job because he's locked out of the pod till he executes the job.<br>
 The operator would have to choose between losing money by paying a higher gas fee than he's compensated for or being locked out of the pod - not able to execute additional jobs or get back his bonded amount.<br>
@@ -1073,7 +1073,7 @@ Use [OpenZeppelin's SafeERC20](https://github.com/OpenZeppelin/openzeppelin-cont
 
 ---
 
-## [[M-03] Beaming job might freeze on dest chain under some conditions, leading to owner losing (temporarily) access to token](https://github.com/code-423n4/2022-10-holograph-findings/issues/170)
+## [[M-03] Bridgeing job might freeze on dest chain under some conditions, leading to owner losing (temporarily) access to token](https://github.com/code-423n4/2022-10-holograph-findings/issues/170)
 
 _Submitted by 0xA5DF_
 

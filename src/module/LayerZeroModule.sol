@@ -249,7 +249,7 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
 
   /**
    * @notice Get the address of the Holograph Bridge module
-   * @dev Used for beaming holographable assets cross-chain
+   * @dev Used for bridging holographable assets cross-chain
    */
   function getBridge() external view returns (address bridge) {
     assembly {
@@ -309,7 +309,7 @@ contract LayerZeroModule is Admin, Initializable, CrossChainMessageInterface, La
 
   /**
    * @notice Get the address of the Holograph Operator module
-   * @dev All cross-chain Holograph Bridge beams are handled by the Holograph Operator module
+   * @dev All cross-chain Holograph bridges are handled by the Holograph Operator module
    */
   function getOperator() external view returns (address operator) {
     assembly {

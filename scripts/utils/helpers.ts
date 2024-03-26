@@ -899,7 +899,7 @@ const ownerCallFull = async function (
   return receipt;
 };
 
-const beamSomething = async function (
+const bridgeSomething = async function (
   origin: PreTest,
   destination: PreTest,
   holographableContract: Contract,
@@ -1101,7 +1101,7 @@ export {
   adminCallFull,
   ownerCall,
   ownerCallFull,
-  beamSomething,
+  bridgeSomething,
   HASH,
   gweiToWei,
   askQuestion,

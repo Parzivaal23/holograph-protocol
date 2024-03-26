@@ -977,7 +977,7 @@ describe('Testing cross-chain minting (CHAIN1 & CHAIN2)', async function () {
       });
 
       describe('validate bridge functionality', async function () {
-        it('token #3 beaming from chain1 to chain2 should succeed', async function () {
+        it('token #3 bridging from chain1 to chain2 should succeed', async function () {
           let data: BytesLike = generateInitCode(
             ['address', 'address', 'uint256'],
             [chain1.deployer.address, chain2.deployer.address, thirdNFTchain1.toHexString()]
@@ -1031,7 +1031,7 @@ describe('Testing cross-chain minting (CHAIN1 & CHAIN2)', async function () {
           ).to.equal(chain2.deployer.address);
         });
 
-        it('token #3 beaming from chain2 to chain1 should succeed', async function () {
+        it('token #3 bridging from chain2 to chain1 should succeed', async function () {
           let data: BytesLike = generateInitCode(
             ['address', 'address', 'uint256'],
             [chain2.deployer.address, chain1.deployer.address, thirdNFTchain2.toHexString()]
@@ -1085,7 +1085,7 @@ describe('Testing cross-chain minting (CHAIN1 & CHAIN2)', async function () {
           ).to.equal(chain1.deployer.address);
         });
 
-        it('token #3 beaming from chain1 to chain2 should fail and recover', async function () {
+        it('token #3 bridging from chain1 to chain2 should fail and recover', async function () {
           let data: BytesLike = generateInitCode(
             ['address', 'address', 'uint256'],
             [chain1.deployer.address, chain2.deployer.address, thirdNFTchain2.toHexString()]
@@ -1163,7 +1163,7 @@ describe('Testing cross-chain minting (CHAIN1 & CHAIN2)', async function () {
           ).to.equal(chain2.deployer.address);
         });
 
-        it('token #2 beaming from chain1 to chain2 should keep TokenURI', async function () {
+        it('token #2 bridging from chain1 to chain2 should keep TokenURI', async function () {
           const tokenURIBefore = await chain1.sampleErc721
             .attach(chain1.sampleErc721Holographer.address)
             .tokenURI(secondNFTchain1);
@@ -1221,7 +1221,7 @@ describe('Testing cross-chain minting (CHAIN1 & CHAIN2)', async function () {
           expect(tokenURIBefore).to.be.equal(tokenURIAfter);
         });
 
-        it('token #2 beaming from chain2 to chain1 should keep TokenURI', async function () {
+        it('token #2 bridging from chain2 to chain1 should keep TokenURI', async function () {
           const tokenURIBefore = await chain2.sampleErc721
             .attach(chain1.sampleErc721Holographer.address)
             .tokenURI(secondNFTchain2);

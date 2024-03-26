@@ -175,7 +175,7 @@ export function adjustBaseBlockFee(network: string, baseBlockFee: BigNumber): Bi
     (network === networks['bobaEthereumTestnetGoerli' as NetworkKeys].key ||
       network === networks['bobaAvalancheTestnet' as NetworkKeys].key ||
       network === networks['bobaBinanceChainTestnet' as NetworkKeys].key ||
-      network === networks['bobaMoonbeamTestnet' as NetworkKeys].key ||
+      network === networks['bobaMoonbridgeTestnet' as NetworkKeys].key ||
       network === networks['bobaFantomTestnet' as NetworkKeys].key) &&
     baseBlockFee.lt(BigNumber.from('1000000000'))
   ) {

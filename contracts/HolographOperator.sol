@@ -600,9 +600,9 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
   /**
    * @notice Send cross chain bridge request message
    * @dev This function is restricted to only be callable by Holograph Bridge
-   * @param gasLimit maximum amount of gas to spend for executing the beam on destination chain
+   * @param gasLimit maximum amount of gas to spend for executing the bridge on destination chain
    * @param gasPrice maximum amount of gas price (in destination chain native gas token) to pay on destination chain
-   * @param toChain Holograph Chain ID where the beam is being sent to
+   * @param toChain Holograph Chain ID where the bridge is being sent to
    * @param nonce incremented number used to ensure job hashes are unique
    * @param holographableContract address of the contract for which the bridge request is being made
    * @param bridgeOutPayload bytes made up of the bridgeOutRequest payload
@@ -967,7 +967,7 @@ contract HolographOperator is Admin, Initializable, HolographOperatorInterface {
 
   /**
    * @notice Get the address of the Holograph Bridge module
-   * @dev Used for beaming holographable assets cross-chain
+   * @dev Used for bridging holographable assets cross-chain
    */
   function getBridge() external view returns (address bridge) {
     assembly {
