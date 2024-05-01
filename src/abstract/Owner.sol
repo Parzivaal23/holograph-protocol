@@ -123,7 +123,7 @@ abstract contract Owner {
 
   constructor() {}
 
-  function getOwner() public view returns (address ownerAddress) {
+  function getOwner() public virtual view returns (address ownerAddress) {
     assembly {
       ownerAddress := sload(_ownerSlot)
     }
