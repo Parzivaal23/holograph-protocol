@@ -18,11 +18,12 @@ import {CountdownERC721} from "src/token/CountdownERC721.sol";
 import {MockUser} from "../utils/MockUser.sol";
 import {Utils} from "../utils/Utils.sol";
 import {CountdownERC721Helper} from "test/foundry/CountdownERC721/utils/Helper.sol";
+import {BaseFixture} from "test/foundry/fixtures/BaseFixture.t.sol";
 
 import {Constants} from "test/foundry/utils/Constants.sol";
 import {DEFAULT_BASE_URI, DEFAULT_BASE_URI_2, DEFAULT_PLACEHOLDER_URI, DEFAULT_PLACEHOLDER_URI_2, DEFAULT_ENCRYPT_DECRYPT_KEY, DEFAULT_ENCRYPT_DECRYPT_KEY_2, DEFAULT_MAX_SUPPLY, DEFAULT_MINT_INTERVAL, DEFAULT_START_DATE} from "test/foundry/CountdownERC721/utils/Constants.sol";
 
-contract CountdownERC721Fixture is Test {
+contract CountdownERC721Fixture is BaseFixture {
   /// @notice Event emitted when the funds are withdrawn from the minting contract
   /// @param withdrawnBy address that issued the withdraw
   /// @param withdrawnTo address that the funds were withdrawn to
@@ -62,7 +63,8 @@ contract CountdownERC721Fixture is Test {
 
   constructor() {}
 
-  function setUp() public virtual {
+  function setUp() public virtual override {
+    super.setUp();
     // Setup VM
     // NOTE: These tests rely on the Holograph protocol being deployed to the local chain
     //       At the moment, the deploy pipeline is still managed by Hardhat, so we need to
