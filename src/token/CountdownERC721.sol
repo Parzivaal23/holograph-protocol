@@ -483,6 +483,10 @@ contract CountdownERC721 is NonReentrant, ContractMetadata, ERC721H, ICustomERC7
     _setMinter(minterAddress);
   }
 
+  function setOwner(address newOwner) external {
+    _setOwner(newOwner);
+  }
+
   /* -------------------------------------------------------------------------- */
   /*                             INTERNAL FUNCTIONS                             */
   /*                             non state changing                             */

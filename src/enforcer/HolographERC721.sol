@@ -1051,6 +1051,17 @@ contract HolographERC721 is Admin, Owner, HolographERC721Interface, Initializabl
     return abi.decode(data, (address));
   }
 
+  function setOwner(address newOwner) public override {
+    address sourceContract;
+    assembly {
+      sourceContract := sload(_sourceContractSlot)
+    }
+
+    sourceContract.call(
+      abi.encodeWithSignature("setOwner(address)", newOwner)
+    );
+  }
+
   function _holograph() private view returns (HolographInterface holograph) {
     assembly {
       holograph := sload(_holographSlot)

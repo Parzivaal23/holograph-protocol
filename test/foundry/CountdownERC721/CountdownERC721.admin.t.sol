@@ -43,6 +43,8 @@ contract CountdownERC721AdminTest is CountdownERC721Fixture, ICustomERC721Errors
 
     vm.prank(DEFAULT_OWNER_ADDRESS);
     HolographERC721(_countdownErc721).setOwner(address(0xffff));
+
+    assertEq(countdownErc721.owner(), address(0xffff));
   }
 
   function test_Withdraw(uint128 amount) public setupTestCountdownErc721(DEFAULT_MAX_SUPPLY) {
