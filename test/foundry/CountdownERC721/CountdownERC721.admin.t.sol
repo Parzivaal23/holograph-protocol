@@ -17,6 +17,7 @@ import {CustomERC721Initializer} from "src/struct/CustomERC721Initializer.sol";
 import {HolographERC721} from "src/enforcer/HolographERC721.sol";
 import {IHolographDropERC721V2} from "src/drops/interface/IHolographDropERC721V2.sol";
 import {HolographTreasury} from "src/HolographTreasury.sol";
+import {HolographERC721} from "src/enforcer/HolographERC721.sol";
 
 contract CountdownERC721AdminTest is CountdownERC721Fixture, ICustomERC721Errors {
   using Strings for uint256;
@@ -25,6 +26,21 @@ contract CountdownERC721AdminTest is CountdownERC721Fixture, ICustomERC721Errors
 
   function setUp() public override {
     super.setUp();
+  }
+
+  function test_Owner() public setupTestCountdownErc721(DEFAULT_MAX_SUPPLY) {
+    assertEq(countdownErc721.owner(), address(this));
+  }
+
+  function test_SetOwner() public setupTestCountdownErc721(DEFAULT_MAX_SUPPLY) {
+    vm.prank(DEFAULT_OWNER_ADDRESS);
+
+    address payable _countdownErc721 = payable(address(countdownErc721));
+
+    countdownErc721.owner();
+    HolographERC721(_countdownErc721).getOwner();
+    HolographERC721(_countdownErc721).setOwner(address(0xffff));
+    assertEq(countdownErc721.owner(), address(0xffff));
   }
 
   function test_Withdraw(uint128 amount) public setupTestCountdownErc721(DEFAULT_MAX_SUPPLY) {
