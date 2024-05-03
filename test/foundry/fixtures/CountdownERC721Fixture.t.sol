@@ -49,12 +49,8 @@ contract CountdownERC721Fixture is Test {
   DummyDropsPriceOracle public dummyPriceOracle;
 
   /* ---------------------------- Test environment ---------------------------- */
-  uint256 nativePrice;
+  uint104 mintEthPrice = 0.1 ether;
   uint256 public chainPrepend;
-  uint256 totalCost;
-  uint104 constant usd10 = 10 * (10 ** 6); // 10 USD (6 decimal places)
-  uint104 constant usd100 = 100 * (10 ** 6); // 100 USD (6 decimal places)
-  uint104 constant usd1000 = 1000 * (10 ** 6); // 1000 USD (6 decimal places)
   uint256 internal fuzzingMaxSupply;
 
   uint256 public constant FIRST_TOKEN_ID =
@@ -144,11 +140,6 @@ contract CountdownERC721Fixture is Test {
     sourceContractAddress = holographerInterface.getSourceContract();
     erc721Enforcer = HolographERC721(payable(address(countdownErc721)));
 
-    uint104 price = usd100;
-    nativePrice = dummyPriceOracle.convertUsdToWei(price);
-
-    totalCost = (nativePrice);
-
     vm.warp(countdownErc721.START_DATE());
   }
 
@@ -162,8 +153,8 @@ contract CountdownERC721Fixture is Test {
     for (uint256 i = 0; i < countdownErc721.currentTheoricalMaxSupply(); i++) {
       address user = address(uint160(uint256(keccak256(abi.encodePacked(i)))));
       vm.startPrank(address(user));
-      vm.deal(address(user), totalCost);
-      countdownErc721.purchase{value: totalCost}(1);
+      vm.deal(address(user), mintEthPrice);
+      countdownErc721.purchase{value: mintEthPrice}(1);
       vm.stopPrank();
     }
   }
@@ -171,7 +162,7 @@ contract CountdownERC721Fixture is Test {
   function _deployAndSetupProtocol(uint32 maxSupply) private {
     // Setup sale config for edition
     CustomERC721SalesConfiguration memory saleConfig = CustomERC721SalesConfiguration({
-      publicSalePrice: usd100,
+      publicSalePrice: uint104(mintEthPrice),
       maxSalePurchasePerAddress: 0 // no limit
     });
 

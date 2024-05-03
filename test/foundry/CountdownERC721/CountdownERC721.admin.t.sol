@@ -79,19 +79,18 @@ contract CountdownERC721AdminTest is CountdownERC721Fixture, ICustomERC721Errors
   }
 
   function test_SetSalesConfiguration() public setupTestCountdownErc721(DEFAULT_MAX_SUPPLY) {
-    uint104 price = usd10;
     vm.prank(DEFAULT_OWNER_ADDRESS);
-    countdownErc721.setSaleConfiguration({publicSalePrice: price, maxSalePurchasePerAddress: 10});
+    countdownErc721.setSaleConfiguration({publicSalePrice: mintEthPrice, maxSalePurchasePerAddress: 10});
 
     (uint104 publicSalePrice, uint24 maxSalePurchasePerAddress) = countdownErc721.salesConfig();
-    assertEq(publicSalePrice, price);
+    assertEq(publicSalePrice, mintEthPrice);
     assertEq(maxSalePurchasePerAddress, 10);
 
     vm.startPrank(DEFAULT_OWNER_ADDRESS);
-    countdownErc721.setSaleConfiguration({publicSalePrice: price * 2, maxSalePurchasePerAddress: 5});
+    countdownErc721.setSaleConfiguration({publicSalePrice: mintEthPrice * 2, maxSalePurchasePerAddress: 5});
 
     (publicSalePrice, maxSalePurchasePerAddress) = countdownErc721.salesConfig();
-    assertEq(publicSalePrice, price * 2);
+    assertEq(publicSalePrice, mintEthPrice * 2);
     assertEq(maxSalePurchasePerAddress, 5);
   }
 

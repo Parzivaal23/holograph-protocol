@@ -31,12 +31,12 @@ contract CountdownERC721PurchaseTest is CountdownERC721Fixture, ICustomERC721Err
   function test_Purchase() public setupTestCountdownErc721(DEFAULT_MAX_SUPPLY) setUpPurchase {
     /* -------------------------------- Purchase -------------------------------- */
     vm.prank(address(TEST_ACCOUNT));
-    vm.deal(address(TEST_ACCOUNT), totalCost);
-    uint256 tokenId = countdownErc721.purchase{value: totalCost}(1);
+    vm.deal(address(TEST_ACCOUNT), mintEthPrice);
+    uint256 tokenId = countdownErc721.purchase{value: mintEthPrice}(1);
 
     // First token ID is this long number due to the chain id prefix
     require(erc721Enforcer.ownerOf(tokenId) == address(TEST_ACCOUNT), "Incorrect owner for newly minted token");
-    assertEq(address(sourceContractAddress).balance, nativePrice);
+    assertEq(address(sourceContractAddress).balance, mintEthPrice);
 
   }
 
@@ -45,12 +45,11 @@ contract CountdownERC721PurchaseTest is CountdownERC721Fixture, ICustomERC721Err
     /* -------------------------------- Purchase -------------------------------- */
 
     uint256 amount = 1;
-    uint104 price = usd100;
     vm.prank(address(TEST_ACCOUNT));
-    vm.deal(address(TEST_ACCOUNT), totalCost - 1);
-    vm.expectRevert(abi.encodeWithSelector(ICountdownERC721.Purchase_WrongPrice.selector, uint256(price)));
+    vm.deal(address(TEST_ACCOUNT), mintEthPrice - 1);
+    vm.expectRevert(abi.encodeWithSelector(ICountdownERC721.Purchase_WrongPrice.selector, uint256(mintEthPrice)));
 
-    countdownErc721.purchase{value: totalCost - 1}(amount);
+    countdownErc721.purchase{value: mintEthPrice - 1}(amount);
   }
 
   function test_GetContractURI() public setupTestCountdownErc721(DEFAULT_MAX_SUPPLY) setUpPurchase {

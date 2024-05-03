@@ -57,12 +57,12 @@ contract CountdownERC721CountdownTest is CountdownERC721Fixture, ICustomERC721Er
 
     // Purchase all the supply
     for (uint256 i = 0; i < maxSupply; i++) {
-      countdownErc721.purchase{value: totalCost}(1);
+      countdownErc721.purchase{value: mintEthPrice}(1);
     }
 
     // Try to purchase one more
     vm.expectRevert(abi.encodeWithSelector(Purchase_CountdownCompleted.selector));
-    countdownErc721.purchase{value: totalCost}(1);
+    countdownErc721.purchase{value: mintEthPrice}(1);
 
     assertEq(countdownErc721.totalMinted(), maxSupply, "Wrong total minted");
     assertEq(countdownErc721.endDate(), start, "Wrong end date");
@@ -81,12 +81,12 @@ contract CountdownERC721CountdownTest is CountdownERC721Fixture, ICustomERC721Er
 
     // Purchase all the supply
     for (uint256 i = 0; i < newMaxSupply; i++) {
-      countdownErc721.purchase{value: totalCost}(1);
+      countdownErc721.purchase{value: mintEthPrice}(1);
     }
 
     // Try to purchase one more
     vm.expectRevert(abi.encodeWithSelector(Purchase_CountdownCompleted.selector));
-    countdownErc721.purchase{value: totalCost}(1);
+    countdownErc721.purchase{value: mintEthPrice}(1);
 
     assertEq(countdownErc721.totalMinted(), initialMaxSupply / 2, "Wrong total minted");
   }
@@ -112,7 +112,7 @@ contract CountdownERC721CountdownTest is CountdownERC721Fixture, ICustomERC721Er
     // Purchase all the supply
     uint256 i = 1;
     while (countdownErc721.totalMinted() < countdownErc721.currentTheoricalMaxSupply()) {
-      countdownErc721.purchase{value: totalCost}(1);
+      countdownErc721.purchase{value: mintEthPrice}(1);
 
       vm.warp(block.timestamp + elapsedTimeBetweenPurchase);
 
@@ -128,7 +128,7 @@ contract CountdownERC721CountdownTest is CountdownERC721Fixture, ICustomERC721Er
 
     // Try to purchase one more
     vm.expectRevert(abi.encodeWithSelector(Purchase_CountdownCompleted.selector));
-    countdownErc721.purchase{value: totalCost}(1);
+    countdownErc721.purchase{value: mintEthPrice}(1);
     uint256 totalMinted = countdownErc721.totalMinted();
     uint256 expectedMaxSupply;
 

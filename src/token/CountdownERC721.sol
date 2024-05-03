@@ -337,13 +337,6 @@ contract CountdownERC721 is NonReentrant, ContractMetadata, ERC721H, ICustomERC7
   }
 
   /**
-   * @notice Convert USD price to current price in native Ether units
-   */
-  function getNativePrice() external view returns (uint256) {
-    return _usdToWei(salesConfig.publicSalePrice);
-  }
-
-  /**
    * @notice Returns the name of the token through the holographer entrypoint
    */
   function name() external view returns (string memory) {
@@ -369,7 +362,7 @@ contract CountdownERC721 is NonReentrant, ContractMetadata, ERC721H, ICustomERC7
   function purchase(
     uint256 quantity
   ) external payable nonReentrant canMintTokens(quantity) onlyPublicSaleActive returns (uint256) {
-    uint256 salePrice = _usdToWei(salesConfig.publicSalePrice);
+    uint256 salePrice = salesConfig.publicSalePrice;
 
     if (msg.value < (salePrice) * quantity) {
       // The error will display what the correct price should be
@@ -524,17 +517,6 @@ contract CountdownERC721 is NonReentrant, ContractMetadata, ERC721H, ICustomERC7
    */
   function _publicSaleActive() internal view returns (bool) {
     return START_DATE <= block.timestamp;
-  }
-
-  /**
-   * @dev Converts the given amount in USD to the equivalent amount in wei using the price oracle.
-   * @param amount The amount in USD to convert to wei
-   */
-  function _usdToWei(uint256 amount) internal view returns (uint256 weiAmount) {
-    if (amount == 0) {
-      return 0;
-    }
-    weiAmount = dropsPriceOracle.convertUsdToWei(amount);
   }
 
   /* -------------------------------------------------------------------------- */
